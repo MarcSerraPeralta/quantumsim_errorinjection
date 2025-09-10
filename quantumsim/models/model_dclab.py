@@ -214,7 +214,7 @@ class DiCarloLabModel(Model):
         duration="time_1qubit",
         plot_metadata={"style": "box", "label": "$Idle$"},
     )
-    def idle_measurement(self, qubit, t_start=0):
+    def idle_sq_gate(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         idling_time = self.p("time_1qubit", qubit)
@@ -225,7 +225,7 @@ class DiCarloLabModel(Model):
         duration="time_2qubit",
         plot_metadata={"style": "box", "label": "$Idle$"},
     )
-    def idle_measurement(self, qubit, t_start=0):
+    def idle_tq_gate(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         idling_time = self.p("time_2qubit", qubit)
