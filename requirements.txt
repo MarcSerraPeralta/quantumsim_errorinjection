@@ -1,0 +1,7 @@
+PyYAML
+more_itertools
+numpy>=1.12
+scipy
+sympy
+pytools
+matplotlib
