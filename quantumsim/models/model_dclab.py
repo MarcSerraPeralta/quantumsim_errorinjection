@@ -150,7 +150,7 @@ class DiCarloLabModel(Model):
     )
     def measure_partial(self, qubit, t_start=None):
         t1_meas = self.p("T1_meas", qubit)
-        half_time = self.p("time_measure", qubit)
+        half_time = 0.5 * self.p("time_measure", qubit)
 
         def project(result):
             overlap = self.p("meas_overlap_01", qubit)
@@ -181,7 +181,7 @@ class DiCarloLabModel(Model):
     )
     def measure_project(self, qubit, t_start=0):
         t1_meas = self.p("T1_meas", qubit)
-        half_time = self.p("time_measure", qubit)
+        half_time = 0.5 * self.p("time_measure", qubit)
 
         def project(result):
             if result in (0, 1, 2):
@@ -198,6 +198,39 @@ class DiCarloLabModel(Model):
             self._meas_butterfly(qubit),
             self._idle(qubit, half_time, t1_meas, t1_meas),
         )
+
+    @Model.gate(
+        duration="time_measure",
+        plot_metadata={"style": "box", "label": "$Idle$"},
+    )
+    def idle_measurement(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        idling_time = self.p("time_measure", qubit)
+
+        return (self._idle(qubit, idling_time, t1, t2),)
+
+    @Model.gate(
+        duration="time_1qubit",
+        plot_metadata={"style": "box", "label": "$Idle$"},
+    )
+    def idle_measurement(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        idling_time = self.p("time_1qubit", qubit)
+
+        return (self._idle(qubit, idling_time, t1, t2),)
+
+    @Model.gate(
+        duration="time_2qubit",
+        plot_metadata={"style": "box", "label": "$Idle$"},
+    )
+    def idle_measurement(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        idling_time = self.p("time_2qubit", qubit)
+
+        return (self._idle(qubit, idling_time, t1, t2),)
 
     def _idle(self, qubit, duration, t1, t2):
         if np.isfinite(t1) and np.isfinite(t2):
