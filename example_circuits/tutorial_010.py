@@ -19,7 +19,7 @@ circuit = Circuit(
     gates=[
         model.rotate_x("D1", t_start=0),
         model.rotate_x("D1", t_start=100),
-        #model.measure_project("D1", t_start=100),
+        # model.measure_project("D1", t_start=100),
     ],
 )
 
