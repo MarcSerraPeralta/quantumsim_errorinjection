@@ -1,0 +1,43 @@
+version: '1'
+name: Sample perfect setup
+
+setup:
+  - time_1qubit: 20
+    time_2qubit: 60
+    time_measure: 300
+    cphase_time_int: 48
+    cphase_time_rise: 2
+    cphase_time_phase_corr: 12
+    # Qubit parameters
+    T1: .inf
+    T1_meas: .inf
+    T2: .inf
+    T2_int: .inf
+    anharmonicity: 0
+    # Measurement parameters
+    meas_overlap_01: 0
+    meas_prob01: 0
+    meas_prob10: 0
+    meas_prob12: 0
+    meas_prob21: 0
+    # CPhase error parameters
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error: 0
+
+    # Qubit parameters
+  - qubit: D2
+    frequency: 6700
+  - qubit: D4
+    frequency: 4900
+  - qubit: Z2
+    frequency: 6000
+  - qubit: X
+    frequency: 6000
