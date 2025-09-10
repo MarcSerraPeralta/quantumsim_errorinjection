@@ -19,7 +19,7 @@ version, cmdclass = get_version_and_cmdclass("quantumsim")
 setup(
     name="quantumsim",
     url="https://quantumsim.gitlab.io/",
-    version=version,
+    version="0.1.0",
     cmdclass=cmdclass,
     description=("Simulation of quantum circuits under somewhat realistic condititons"),
     author="Quantumsim Authors",
