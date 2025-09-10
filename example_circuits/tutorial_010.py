@@ -6,7 +6,7 @@ from quantumsim.circuits.circuit import Gate
 from quantumsim.circuits.plotter import plot
 from quantumsim.operations import Operation
 from quantumsim.states.state import State
-from qs_dclab.model import DiCarloLabModel
+from quantumsim.models import DiCarloLabModel
 import matplotlib.pyplot as plt
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
