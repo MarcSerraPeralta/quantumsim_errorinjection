@@ -15,9 +15,9 @@ class TestLibrary:
         sys_bases = basis * 3
         dm = PauliVector(sys_bases)
 
-        rotate90 = lib.rotate_x(0.5*np.pi)
+        rotate90 = lib.rotate_x(0.5 * np.pi)
         rotate180 = lib.rotate_x(np.pi)
-        rotate360 = lib.rotate_x(2*np.pi)
+        rotate360 = lib.rotate_x(2 * np.pi)
 
         rotate90(dm, 1)
         rotate180(dm, 2)
@@ -39,9 +39,9 @@ class TestLibrary:
         sys_bases = basis * 3
         dm = PauliVector(sys_bases)
 
-        rotate90 = lib.rotate_y(0.5*np.pi)
+        rotate90 = lib.rotate_y(0.5 * np.pi)
         rotate180 = lib.rotate_y(np.pi)
-        rotate360 = lib.rotate_y(2*np.pi)
+        rotate360 = lib.rotate_y(2 * np.pi)
 
         rotate90(dm, 1)
         rotate180(dm, 2)
@@ -63,9 +63,9 @@ class TestLibrary:
         qubit_basis = (bases.general(3),)
         dm = PauliVector(qubit_basis)
 
-        rotate90 = lib.rotate_z(0.5*np.pi)
+        rotate90 = lib.rotate_z(0.5 * np.pi)
         rotate180 = lib.rotate_z(np.pi)
-        rotate360 = lib.rotate_z(2*np.pi)
+        rotate360 = lib.rotate_z(2 * np.pi)
 
         rotate90(dm, 0)
         assert np.allclose(dm.to_pv(), [1] + [0] * 8)
@@ -77,24 +77,20 @@ class TestLibrary:
         superpos_dm = PauliVector(qubit_basis, had_expansion)
 
         rotate180(superpos_dm, 0)
-        assert np.allclose(superpos_dm.to_pv(),
-                           [0.5, 0.5, 0, -sqrt2, 0, 0, 0, 0, 0])
+        assert np.allclose(superpos_dm.to_pv(), [0.5, 0.5, 0, -sqrt2, 0, 0, 0, 0, 0])
 
         rotate90(superpos_dm, 0)
-        assert np.allclose(superpos_dm.to_pv(),
-                           [0.5, 0.5, 0, 0, -sqrt2, 0, 0, 0, 0])
+        assert np.allclose(superpos_dm.to_pv(), [0.5, 0.5, 0, 0, -sqrt2, 0, 0, 0, 0])
 
         rotate180(superpos_dm, 0)
-        assert np.allclose(superpos_dm.to_pv(),
-                           [0.5, 0.5, 0, 0, sqrt2, 0, 0, 0, 0])
+        assert np.allclose(superpos_dm.to_pv(), [0.5, 0.5, 0, 0, sqrt2, 0, 0, 0, 0])
 
         rotate360(superpos_dm, 0)
-        assert np.allclose(superpos_dm.to_pv(),
-                           [0.5, 0.5, 0, 0, sqrt2, 0, 0, 0, 0])
+        assert np.allclose(superpos_dm.to_pv(), [0.5, 0.5, 0, 0, sqrt2, 0, 0, 0, 0])
 
     def test_hadamard(self):
         qubit_basis = (bases.general(3),)
-        sys_bases = qubit_basis+qubit_basis
+        sys_bases = qubit_basis + qubit_basis
         dm = PauliVector(sys_bases)
 
         hadamard = lib.hadamard()
@@ -107,25 +103,23 @@ class TestLibrary:
         assert np.allclose(dm.meas_prob(1), (1, 0, 0))
 
     def test_cphase_compatability(self):
-        cz_op_nz = lib.cphase(angle=np.pi,
-                              leakage_rate=0,
-                              leakage_phase=-np.pi/2,
-                              model='NetZero')
+        cz_op_nz = lib.cphase(
+            angle=np.pi, leakage_rate=0, leakage_phase=-np.pi / 2, model="NetZero"
+        )
 
-        cz_op_legacy = lib.cphase(angle=np.pi,
-                                  leakage_rate=0,
-                                  model='legacy')
+        cz_op_legacy = lib.cphase(angle=np.pi, leakage_rate=0, model="legacy")
 
         b = (cz_op_nz.bases_in, cz_op_nz.bases_out)
         assert np.allclose(cz_op_nz.ptm(*b), cz_op_legacy.ptm(*b))
 
         input_leakage_rate = 0.001
-        cz_op_nz = lib.cphase(angle=np.pi,
-                              leakage_rate=input_leakage_rate,
-                              leakage_phase=-np.pi/2,
-                              model='netzero')
-        cz_op_legacy = lib.cphase(angle=np.pi,
-                                  leakage_rate=4*input_leakage_rate,
-                                  model='legacy')
-        assert np.allclose(
-            cz_op_nz.ptm(*b), cz_op_legacy.ptm(*b))
+        cz_op_nz = lib.cphase(
+            angle=np.pi,
+            leakage_rate=input_leakage_rate,
+            leakage_phase=-np.pi / 2,
+            model="netzero",
+        )
+        cz_op_legacy = lib.cphase(
+            angle=np.pi, leakage_rate=4 * input_leakage_rate, model="legacy"
+        )
+        assert np.allclose(cz_op_nz.ptm(*b), cz_op_legacy.ptm(*b))

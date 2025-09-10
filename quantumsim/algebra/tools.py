@@ -2,15 +2,12 @@ import numpy as np
 from scipy.stats import unitary_group
 
 sigma = {
-    'I': np.array([[1., 0.],
-                   [0., 1.]], dtype=complex),
-    'X': np.array([[0., 1.],
-                   [1., 0.]], dtype=complex),
-    'Y': np.array([[0., -1j],
-                   [1j, 0.]], dtype=complex),
-    'Z': np.array([[1., 0.],
-                   [0., -1.]], dtype=complex),
+    "I": np.array([[1.0, 0.0], [0.0, 1.0]], dtype=complex),
+    "X": np.array([[0.0, 1.0], [1.0, 0.0]], dtype=complex),
+    "Y": np.array([[0.0, -1j], [1j, 0.0]], dtype=complex),
+    "Z": np.array([[1.0, 0.0], [0.0, -1.0]], dtype=complex),
 }
+
 
 def random_hermitian_matrix(dim: int, seed: int):
     rng = np.random.RandomState(seed)
@@ -18,7 +15,7 @@ def random_hermitian_matrix(dim: int, seed: int):
     diag = rng.rand(dim)
     diag /= np.sum(diag)
     dm = np.diag(diag)
-    unitary = random_unitary_matrix(dim, seed+1)
+    unitary = random_unitary_matrix(dim, seed + 1)
     return unitary @ dm @ unitary.conj().T
 
 
@@ -30,6 +27,5 @@ def random_unitary_matrix(dim: int, seed: int):
 def verify_kraus_unitarity(kraus_ops, *, tbw_tol=1e-6):
     assert len(kraus_ops.shape) in (2, 3)
     dim_hilbert = kraus_ops.shape[1]
-    op_products = np.sum([kraus.conj().T.dot(kraus)
-                          for kraus in kraus_ops], axis=0)
-    return np.sum(op_products)/dim_hilbert - 1 < tbw_tol
+    op_products = np.sum([kraus.conj().T.dot(kraus) for kraus in kraus_ops], axis=0)
+    return np.sum(op_products) / dim_hilbert - 1 < tbw_tol

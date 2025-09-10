@@ -24,6 +24,7 @@ class PauliVectorBase(metaclass=abc.ABCMeta):
         :math:`2^22` elements currently) is not allowed. Set this to `True`
         if you know what you are doing.
     """
+
     _size_max = 2**22
 
     # noinspection PyUnusedLocal
@@ -32,9 +33,10 @@ class PauliVectorBase(metaclass=abc.ABCMeta):
         self.bases = list(bases)
         if self.size > self._size_max and not force:
             raise ValueError(
-                'Density matrix of the system is going to have {} items. It '
-                'is probably too much. If you know what you are doing, '
-                'pass `force=True` argument to the constructor.')
+                "Density matrix of the system is going to have {} items. It "
+                "is probably too much. If you know what you are doing, "
+                "pass `force=True` argument to the constructor."
+            )
 
     @classmethod
     def from_pv(cls, pv, bases, *, force=False):
@@ -47,7 +49,7 @@ class PauliVectorBase(metaclass=abc.ABCMeta):
 
     @classmethod
     def from_dm(cls, dm, bases, *, force=False):
-        if not hasattr(bases, '__iter__'):
+        if not hasattr(bases, "__iter__"):
             n_qubits = len(dm) // bases.dim_hilbert
             bases = [bases] * n_qubits
         return cls(bases, dm_to_pv(dm, bases), force=force)
@@ -103,14 +105,16 @@ class PauliVectorBase(metaclass=abc.ABCMeta):
         if number < 0 or number >= self.n_qubits:
             raise ValueError(
                 "`{name}` number {n} does not exist in the system, "
-                "it contains {n_qubits} qubits in total."
-                .format(name=name, n=number, n_qubits=self.n_qubits))
+                "it contains {n_qubits} qubits in total.".format(
+                    name=name, n=number, n_qubits=self.n_qubits
+                )
+            )
 
     # noinspection PyMethodMayBeStatic
     def _validate_ptm_shape(self, ptm, target_shape, name):
         if ptm.shape != target_shape:
             raise ValueError(
-                "`{name}` shape must be {target_shape}, got {real_shape}"
-                .format(name=name,
-                        target_shape=target_shape,
-                        real_shape=ptm.shape))
+                "`{name}` shape must be {target_shape}, got {real_shape}".format(
+                    name=name, target_shape=target_shape, real_shape=ptm.shape
+                )
+            )

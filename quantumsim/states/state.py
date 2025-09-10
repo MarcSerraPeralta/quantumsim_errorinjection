@@ -17,8 +17,7 @@ class State:
         :class:`quantumsim.pauli_vectors.pauli_vector.PauliVectorBase`.
     """
 
-    def __init__(self, qubits, *, dim=2, pauli_vector_class=None,
-                 pauli_vector=None):
+    def __init__(self, qubits, *, dim=2, pauli_vector_class=None, pauli_vector=None):
         self.qubits = list(qubits)
         if pauli_vector is not None:
             self.pauli_vector = pauli_vector
@@ -26,12 +25,14 @@ class State:
             bases_ = (bases.general(dim).subbasis([0]),) * len(self.qubits)
             if pauli_vector_class is None:
                 from ..pauli_vectors import Default
+
                 self.pauli_vector = Default(bases_)
             else:
                 if not issubclass(pauli_vector_class, PauliVectorBase):
                     raise ValueError(
                         "pauli_vector_class must be a subclass of "
-                        "quantumsim.pauli_vectors.PauliVectorBase")
+                        "quantumsim.pauli_vectors.PauliVectorBase"
+                    )
                 self.pauli_vector = pauli_vector_class(bases_)
 
     def __copy__(self):
@@ -61,24 +62,27 @@ class State:
         n = self.pauli_vector.n_qubits
         if isinstance(operator, str):
             if n != len(operator):
-                raise ValueError("operator string must have the same length "
-                                 "as number of qubits in the state")
+                raise ValueError(
+                    "operator string must have the same length "
+                    "as number of qubits in the state"
+                )
             try:
                 sigmas = [sigma[ch.upper()] for ch in operator]
             except KeyError as ex:
-                raise ValueError("operator string must contain only I, X, "
-                                 "Y or Z") from ex
+                raise ValueError(
+                    "operator string must contain only I, X, " "Y or Z"
+                ) from ex
             for i, s in enumerate(sigmas):
                 einsum_args.append(s)
-                einsum_args.append([i, n+i])
+                einsum_args.append([i, n + i])
         else:
             einsum_args.append(operator)
-            einsum_args.append(list(range(2*n)))
+            einsum_args.append(list(range(2 * n)))
         einsum_args.append(self.pauli_vector.to_pv()),
-        einsum_args.append([2*n+i for i in range(n)])
+        einsum_args.append([2 * n + i for i in range(n)])
         for i, basis in enumerate(self.pauli_vector.bases):
             einsum_args.append(basis.vectors)
-            einsum_args.append([2*n+i, n+i, i])
+            einsum_args.append([2 * n + i, n + i, i])
         print(einsum_args)
         return np.einsum(*einsum_args, optimize=True)
 
@@ -94,5 +98,9 @@ class State:
         q0, q1, ... : str
             Names of qubits to preserve in the state.
         """
-        return State(qubits, pauli_vector=self.pauli_vector.partial_trace(*[
-            self.qubits.index(q) for q in qubits]))
+        return State(
+            qubits,
+            pauli_vector=self.pauli_vector.partial_trace(
+                *[self.qubits.index(q) for q in qubits]
+            ),
+        )

@@ -21,13 +21,17 @@ package_path = os.path.dirname(os.path.realpath(__file__))
 mod = None
 DEFAULT_NVCC_FLAGS.append("-Wno-deprecated-gpu-targets")
 
-for kernel_file in [sys.prefix + "/pycudakernels/primitives.cu",
-                    package_path + "/primitives.cu"]:
+for kernel_file in [
+    sys.prefix + "/pycudakernels/primitives.cu",
+    package_path + "/primitives.cu",
+]:
     try:
         with open(kernel_file, "r") as kernel_source_file:
             mod = SourceModule(
-                kernel_source_file.read(), options=DEFAULT_NVCC_FLAGS + [
-                    "--default-stream", "per-thread", "-lineinfo"])
+                kernel_source_file.read(),
+                options=DEFAULT_NVCC_FLAGS
+                + ["--default-stream", "per-thread", "-lineinfo"],
+            )
             break
     except FileNotFoundError:
         pass
@@ -35,8 +39,7 @@ for kernel_file in [sys.prefix + "/pycudakernels/primitives.cu",
 if mod is None:
     raise ImportError("could not find primitives.cu")
 
-pycuda.autoinit.context.set_shared_config(
-    drv.shared_config.EIGHT_BYTE_BANK_SIZE)
+pycuda.autoinit.context.set_shared_config(drv.shared_config.EIGHT_BYTE_BANK_SIZE)
 
 _two_qubit_general_ptm = mod.get_function("two_qubit_general_ptm")
 _two_qubit_general_ptm.prepare("PPPIIIII")
@@ -45,10 +48,11 @@ _multitake.prepare("PPPPPPI")
 
 sum_along_axis = pycuda.reduction.ReductionKernel(
     dtype_out=np.float64,
-    neutral="0", reduce_expr="a+b",
+    neutral="0",
+    reduce_expr="a+b",
     map_expr="(i/stride) % dim == offset ? in[i] : 0",
     arguments="const double *in, unsigned int stride, unsigned int dim, "
-              "unsigned int offset",
+    "unsigned int offset",
 )
 
 
@@ -72,21 +76,23 @@ class PauliVectorCuda(PauliVectorBase):
         if pv is not None:
             if self.dim_pauli != pv.shape:
                 raise ValueError(
-                    '`bases` Pauli dimensionality should be the same as the '
-                    'shape of `data` array.\n'
-                    ' - bases shapes: {}\n - data shape: {}'
-                    .format(self.dim_pauli, pv.shape))
+                    "`bases` Pauli dimensionality should be the same as the "
+                    "shape of `data` array.\n"
+                    " - bases shapes: {}\n - data shape: {}".format(
+                        self.dim_pauli, pv.shape
+                    )
+                )
         else:
             pv = np.zeros(self.dim_pauli, np.float64)
-            ground_state_index = [pb.computational_basis_indices[0]
-                                  for pb in self.bases]
+            ground_state_index = [
+                pb.computational_basis_indices[0] for pb in self.bases
+            ]
             pv[tuple(ground_state_index)] = 1
 
         if isinstance(pv, np.ndarray):
             if pv.dtype not in (np.float16, np.float32, np.float64):
                 raise ValueError(
-                    '`pv` must have float64 data type, got {}'
-                    .format(pv.dtype)
+                    "`pv` must have float64 data type, got {}".format(pv.dtype)
                 )
 
             # Looks like there are some issues with ordering, so the line
@@ -94,21 +100,22 @@ class PauliVectorCuda(PauliVectorBase):
             # self._data = ga.to_gpu(pv.astype(np.float64))
 
             self._work_data = ga.to_gpu(
-                pv.reshape(pv.size, order='C').astype(np.float64))
-            self._data = ga.empty(pv.shape, dtype=np.float64, order='C')
+                pv.reshape(pv.size, order="C").astype(np.float64)
+            )
+            self._data = ga.empty(pv.shape, dtype=np.float64, order="C")
             self._data.set(self._work_data.reshape(pv.shape))
             self._work_data.gpudata.free()
         elif isinstance(pv, ga.GPUArray):
             if pv.dtype != np.float64:
                 raise ValueError(
-                    '`pv` must have float64 data type, got {}'
-                    .format(pv.dtype)
+                    "`pv` must have float64 data type, got {}".format(pv.dtype)
                 )
             self._data = pv
         else:
             raise ValueError(
                 "`pv` must be Numpy array, PyCUDA GPU array or "
-                "None, got type `{}`".format(type(pv)))
+                "None, got type `{}`".format(type(pv))
+            )
 
         self._data.gpudata.size = self._data.nbytes
         self._work_data = ga.empty_like(self._data)
@@ -123,8 +130,9 @@ class PauliVectorCuda(PauliVectorBase):
         elif len(qubits) == 2:
             self._apply_two_qubit_ptm(qubits[0], qubits[1], ptm)
         else:
-            raise NotImplementedError('Applying {}-qubit PTM is not '
-                                      'implemented in the active backend.')
+            raise NotImplementedError(
+                "Applying {}-qubit PTM is not " "implemented in the active backend."
+            )
 
     def _ensure_gpu_array_shape(self, arr, shape):
         new_size = pytools.product(shape)
@@ -136,8 +144,10 @@ class PauliVectorCuda(PauliVectorBase):
                 out = ga.empty(shape, np.float64)
                 out.gpudata.size = self._work_data.nbytes
             except Exception as ex:
-                raise RuntimeError(f"Could not allocate a GPU array of shape {shape} "
-                                   f"and size {new_size_bytes} bytes") from ex
+                raise RuntimeError(
+                    f"Could not allocate a GPU array of shape {shape} "
+                    f"and size {new_size_bytes} bytes"
+                ) from ex
         else:
             # reallocation not required,
             # reshape but reuse allocation
@@ -161,11 +171,10 @@ class PauliVectorCuda(PauliVectorBase):
         qubit0: int
             Index of second qubit
         """
-        self._validate_qubit(qubit1, 'qubit0')
-        self._validate_qubit(qubit0, 'qubit1')
+        self._validate_qubit(qubit1, "qubit0")
+        self._validate_qubit(qubit0, "qubit1")
         if len(ptm.shape) != 4:
-            raise ValueError(
-                "`ptm` must be a 4D array, got {}D".format(len(ptm.shape)))
+            raise ValueError("`ptm` must be a 4D array, got {}D".format(len(ptm.shape)))
 
         # bit0 must be the more significant bit (bit 0 is msb)
         if qubit0 > qubit1:
@@ -202,8 +211,8 @@ class PauliVectorCuda(PauliVectorBase):
         grid_size = max(1, (new_size - 1) // blocksize + 1)
         grid = (grid_size, 1, 1)
 
-        dim_z = pytools.product(self._data.shape[qubit1 + 1:])
-        dim_y = pytools.product(self._data.shape[qubit0 + 1:qubit1])
+        dim_z = pytools.product(self._data.shape[qubit1 + 1 :])
+        dim_y = pytools.product(self._data.shape[qubit0 + 1 : qubit1])
         dim_rho = new_size  # self.data.size
 
         _two_qubit_general_ptm.prepared_call(
@@ -212,11 +221,13 @@ class PauliVectorCuda(PauliVectorBase):
             self._data.gpudata,
             self._work_data.gpudata,
             ptm_gpu.gpudata,
-            dim0_in, dim1_in,
+            dim0_in,
+            dim1_in,
             dim_z,
             dim_y,
             dim_rho,
-            shared_size=8 * sh_mem_size)
+            shared_size=8 * sh_mem_size,
+        )
 
         self._data, self._work_data = self._work_data, self._data
 
@@ -235,12 +246,11 @@ class PauliVectorCuda(PauliVectorBase):
             after the PTM application.
         """
         new_shape = list(self._data.shape)
-        self._validate_qubit(qubit, 'bit')
+        self._validate_qubit(qubit, "bit")
 
         # TODO Refactor to use self._validate_ptm
         if len(ptm.shape) != 2:
-            raise ValueError(
-                "`ptm` must be a 2D array, got {}D".format(len(ptm.shape)))
+            raise ValueError("`ptm` must be a 2D array, got {}D".format(len(ptm.shape)))
 
         dim_bit_out, dim_bit_in = ptm.shape
         new_shape[qubit] = dim_bit_out
@@ -258,7 +268,7 @@ class PauliVectorCuda(PauliVectorBase):
         grid_size = max(1, (new_size - 1) // blocksize + 1)
         grid = (grid_size, 1, 1)
 
-        dim_z = pytools.product(self._data.shape[qubit + 1:])
+        dim_z = pytools.product(self._data.shape[qubit + 1 :])
         dim_y = pytools.product(self._data.shape[:qubit])
         dim_rho = new_size  # self.data.size
 
@@ -268,11 +278,13 @@ class PauliVectorCuda(PauliVectorBase):
             self._data.gpudata,
             self._work_data.gpudata,
             ptm_gpu.gpudata,
-            1, dim_bit_in,
+            1,
+            dim_bit_in,
             dim_z,
             dim_y,
             dim_rho,
-            shared_size=8 * sh_mem_size)
+            shared_size=8 * sh_mem_size,
+        )
 
         self._data, self._work_data = self._work_data, self._data
 
@@ -300,14 +312,18 @@ class PauliVectorCuda(PauliVectorBase):
             if target_array.size < diag_size:
                 raise ValueError(
                     "Size of `target_gpu_array` is too small ({}).\n"
-                    "Should be at least {}."
-                    .format(target_array.size, diag_size))
+                    "Should be at least {}.".format(target_array.size, diag_size)
+                )
             target_array = self._ensure_gpu_array_shape(target_array, diag_shape)
 
-        idx = [[pb.computational_basis_indices[i]
+        idx = [
+            [
+                pb.computational_basis_indices[i]
                 for i in range(pb.dim_hilbert)
-                if pb.computational_basis_indices[i] is not None]
-               for pb in self.bases]
+                if pb.computational_basis_indices[i] is not None
+            ]
+            for pb in self.bases
+        ]
 
         idx_j = np.array(list(pytools.flatten(idx))).astype(np.uint32)
         idx_i = np.cumsum([0] + [len(i) for i in idx][:-1]).astype(np.uint32)
@@ -321,26 +337,30 @@ class PauliVectorCuda(PauliVectorBase):
         idx_i_gpu = self._cached_gpuarray(idx_i)
         idx_j_gpu = self._cached_gpuarray(idx_j)
 
-        block = (2 ** 8, 1, 1)
-        grid = (max(1, (diag_size - 1) // 2 ** 8 + 1), 1, 1)
+        block = (2**8, 1, 1)
+        grid = (max(1, (diag_size - 1) // 2**8 + 1), 1, 1)
 
         if len(yshape) == 0:
             # brain-dead case, but should be handled according to exp.
             target_array.set(self._data.get())
         else:
             _multitake.prepared_call(
-                grid, block, self._data.gpudata, target_array.gpudata,
-                idx_i_gpu.gpudata, idx_j_gpu.gpudata,
-                xshape_gpu.gpudata, yshape_gpu.gpudata,
-                np.uint32(len(yshape))
+                grid,
+                block,
+                self._data.gpudata,
+                target_array.gpudata,
+                idx_i_gpu.gpudata,
+                idx_j_gpu.gpudata,
+                xshape_gpu.gpudata,
+                yshape_gpu.gpudata,
+                np.uint32(len(yshape)),
             )
 
         if get_data:
             if flatten:
                 return target_array.get().ravel()[:diag_size]
             else:
-                return (target_array.get().ravel()[:diag_size]
-                        .reshape(diag_shape))
+                return target_array.get().ravel()[:diag_size].reshape(diag_shape)
         else:
             return target_array
 
@@ -349,18 +369,19 @@ class PauliVectorCuda(PauliVectorBase):
         return np.sum(self.diagonal())
 
     def partial_trace(self, *qubits):
-        raise NotImplementedError("Currently this method is implemented only "
-                                  "in Numpy backend.")
+        raise NotImplementedError(
+            "Currently this method is implemented only " "in Numpy backend."
+        )
 
     def meas_prob(self, qubit):
-        """ Return the diagonal of the reduced density matrix of a qubit.
+        """Return the diagonal of the reduced density matrix of a qubit.
 
         Parameters
         ----------
         qubit: int
             Index of the qubit.
         """
-        self._validate_qubit(qubit, 'qubit')
+        self._validate_qubit(qubit, "qubit")
 
         # TODO on graphics card, optimize for tracing out?
         diag = self.diagonal(get_data=False)
@@ -379,9 +400,10 @@ class PauliVectorCuda(PauliVectorBase):
             # We need to insert zeros at the basis elements, that are missing
             # from the basis
             it = iter(out)
-            return [next(it) if qbi is not None else 0.
-                    for qbi in self.bases[qubit]
-                    .computational_basis_indices.values()]
+            return [
+                next(it) if qbi is not None else 0.0
+                for qbi in self.bases[qubit].computational_basis_indices.values()
+            ]
 
     def renormalize(self):
         """Renormalize to trace one."""
@@ -391,7 +413,8 @@ class PauliVectorCuda(PauliVectorBase):
         else:
             warnings.warn(
                 "Density matrix trace is 0; likely your further computation "
-                "will fail. Have you projected DM on a state with zero weight?")
+                "will fail. Have you projected DM on a state with zero weight?"
+            )
         return tr
 
     def copy(self):

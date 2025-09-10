@@ -9,13 +9,13 @@ from .models import Model, DiCarloLabModel
 PauliVector = pauli_vectors.Default
 
 __all__ = [
-    'bases',
-    'pauli_vectors',
-    'Model',
-    'Operation',
-    'PauliVector',
-    'Setup',
-    'State',
+    "bases",
+    "pauli_vectors",
+    "Model",
+    "Operation",
+    "PauliVector",
+    "Setup",
+    "State",
     "DiCarloLabModel",
 ]
 
@@ -23,5 +23,7 @@ __all__ = [
 def test(verbose=True):
     from pytest import main
     from os.path import dirname, abspath, join
-    return main([dirname(abspath(join(__file__, '..'))), "-s"] +
-                (['-v'] if verbose else []))
+
+    return main(
+        [dirname(abspath(join(__file__, ".."))), "-s"] + (["-v"] if verbose else [])
+    )

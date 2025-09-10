@@ -25,8 +25,9 @@ def general(dim_hilbert):
     PauliBasis
         Full orthonromal Pauli basis.
     """
-    vectors = np.zeros((dim_hilbert * dim_hilbert, dim_hilbert, dim_hilbert),
-                       dtype=complex)
+    vectors = np.zeros(
+        (dim_hilbert * dim_hilbert, dim_hilbert, dim_hilbert), dtype=complex
+    )
     # noinspection PyTypeChecker
     labels = np.full(dim_hilbert * dim_hilbert, None, dtype=object)
     counter = count()
@@ -87,8 +88,9 @@ def gell_mann(dim_hilbert):
             zeros[i, j] = 1j * _sqrt2i
             zeros[j, i] = -1j * _sqrt2i
 
-    vectors = np.zeros((dim_hilbert * dim_hilbert, dim_hilbert, dim_hilbert),
-                       dtype=complex)
+    vectors = np.zeros(
+        (dim_hilbert * dim_hilbert, dim_hilbert, dim_hilbert), dtype=complex
+    )
     # noinspection PyTypeChecker
     labels = np.full(dim_hilbert * dim_hilbert, None, dtype=object)
     counter = count()
@@ -96,7 +98,7 @@ def gell_mann(dim_hilbert):
     for i in range(dim_hilbert):
         for j in range(dim_hilbert):
             num = next(counter)
-            labels[num] = ("γ{}{}".format(i, j))
+            labels[num] = "γ{}{}".format(i, j)
             if i == j:
                 diagonal(i, vectors[num])
             else:
@@ -106,17 +108,21 @@ def gell_mann(dim_hilbert):
 
 
 twolevel_0xy1 = PauliBasis(
-    vectors=np.array([[[1, 0], [0, 0]],
-                      _sqrt2i * np.array([[0, 1], [1, 0]]),
-                      _sqrt2i * np.array([[0, -1j], [1j, 0]]),
-                      [[0, 0], [0, 1]]]),
-    labels=np.array(("0", "X", "Y", "1"), dtype=object)
+    vectors=np.array(
+        [
+            [[1, 0], [0, 0]],
+            _sqrt2i * np.array([[0, 1], [1, 0]]),
+            _sqrt2i * np.array([[0, -1j], [1j, 0]]),
+            [[0, 0], [0, 1]],
+        ]
+    ),
+    labels=np.array(("0", "X", "Y", "1"), dtype=object),
 )
 
 twolevel_ixyz = PauliBasis(
-    vectors=_sqrt2i * np.array([[[1, 0], [0, 1]],
-                                [[0, 1], [1, 0]],
-                                [[0, -1j], [1j, 0]],
-                                [[1, 0], [0, -1]]]),
-    labels=np.array(("I", "X", "Y", "Z"), dtype=object)
+    vectors=_sqrt2i
+    * np.array(
+        [[[1, 0], [0, 1]], [[0, 1], [1, 0]], [[0, -1j], [1j, 0]], [[1, 0], [0, -1]]]
+    ),
+    labels=np.array(("I", "X", "Y", "Z"), dtype=object),
 )

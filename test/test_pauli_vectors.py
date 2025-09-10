@@ -16,16 +16,18 @@ from scipy.stats import unitary_group
 from quantumsim.algebra import kraus_to_ptm, ptm_convert_basis
 
 
-@pytest.fixture(params=[
-    ('quantumsim.pauli_vectors.numpy', 'PauliVectorNumpy'),
-    ('quantumsim.pauli_vectors.cuda', 'PauliVectorCuda'),
-])
+@pytest.fixture(
+    params=[
+        ("quantumsim.pauli_vectors.numpy", "PauliVectorNumpy"),
+        ("quantumsim.pauli_vectors.cuda", "PauliVectorCuda"),
+    ]
+)
 def pauli_vector_cls(request):
     mod = pytest.importorskip(request.param[0])
     return getattr(mod, request.param[1])
 
 
-@pytest.fixture(params=[[2]*9, [3, 2, 2]])
+@pytest.fixture(params=[[2] * 9, [3, 2, 2]])
 def dm_dims(request):
     return request.param
 
@@ -53,7 +55,7 @@ def random_density_matrix(dim, seed):
     diag = rng.rand(dim)
     diag /= np.sum(diag)
     dm = np.diag(diag)
-    unitary = random_unitary_matrix(dim, seed+1)
+    unitary = random_unitary_matrix(dim, seed + 1)
     return unitary @ dm @ unitary.conj().T
 
 
@@ -77,7 +79,7 @@ class TestPauliVectors:
             assert dm.n_qubits == len(dm_dims)
             assert dm.dim_hilbert == approx(dm_dims)
             assert dm.dim_pauli == approx(target_shape)
-            assert dm.size == np.product(np.array(dm_dims)**2)
+            assert dm.size == np.product(np.array(dm_dims) ** 2)
             if expansion is not None:
                 np.testing.assert_almost_equal(dm.to_pv(), expansion)
             del dm
@@ -100,12 +102,20 @@ class TestPauliVectors:
             pauli_vector_cls(bases=[quantumsim.bases.general(2)] * 16)
 
     @pytest.mark.parametrize(
-        'bases', [
-            (quantumsim.bases.general(2), quantumsim.bases.general(2), quantumsim.bases.general(2)),
-            (quantumsim.bases.general(2).subbasis([0, 1, 2]),
-             quantumsim.bases.general(2).subbasis([0, 1]),
-             quantumsim.bases.general(2))
-        ])
+        "bases",
+        [
+            (
+                quantumsim.bases.general(2),
+                quantumsim.bases.general(2),
+                quantumsim.bases.general(2),
+            ),
+            (
+                quantumsim.bases.general(2).subbasis([0, 1, 2]),
+                quantumsim.bases.general(2).subbasis([0, 1]),
+                quantumsim.bases.general(2),
+            ),
+        ],
+    )
     def test_create_from_dm_general(self, pauli_vector_cls, bases):
         dm = np.zeros((8, 8), dtype=complex)
         dm[0, 0] = 0.25  # |000><000|
@@ -134,9 +144,14 @@ class TestPauliVectors:
         assert s.bases[2] == bases[2]
 
         pv = s.to_pv()
-        dm2 = np.einsum('ijk,iad,jbe,kcf->abcdef',
-                        pv, bases[0].vectors, bases[1].vectors,
-                        bases[2].vectors, optimize=True).reshape(8, 8)
+        dm2 = np.einsum(
+            "ijk,iad,jbe,kcf->abcdef",
+            pv,
+            bases[0].vectors,
+            bases[1].vectors,
+            bases[2].vectors,
+            optimize=True,
+        ).reshape(8, 8)
         assert dm2 == approx(dm)
 
     def test_apply_random_ptm1q_pv1q(self, pauli_vector_cls, dm_basis):
@@ -162,12 +177,12 @@ class TestPauliVectors:
         pv0.apply_ptm(ptm, 0)
         assert pv0.to_pv() == approx(pv1.to_pv())
 
-    @pytest.mark.parametrize('qubit', [0, 1, 2])
+    @pytest.mark.parametrize("qubit", [0, 1, 2])
     def test_apply_1q_random_ptm(self, pauli_vector_cls, dm_basis, qubit):
         unity = np.identity(2)
         unitary = random_unitary_matrix(2, 45)
         einsum_args = [unity, [0, 3], unity, [1, 4], unity, [2, 5]]
-        einsum_args[2*qubit] = unitary
+        einsum_args[2 * qubit] = unitary
         unitary3q = np.einsum(*einsum_args, optimize=True).reshape(8, 8)
 
         dm_before = random_density_matrix(8, seed=46)
@@ -190,7 +205,7 @@ class TestPauliVectors:
         pv0.apply_ptm(ptm, qubit)
         assert pv0.to_pv() == approx(pv1.to_pv())
 
-    @pytest.mark.parametrize('qubit', [0, 1, 2])
+    @pytest.mark.parametrize("qubit", [0, 1, 2])
     def test_apply_1q_projecting_ptm(self, pauli_vector_cls, dm_basis, qubit):
         unitary = random_unitary_matrix(2, 45)
 
@@ -208,9 +223,7 @@ class TestPauliVectors:
         pv.apply_ptm(ptm, qubit)
         pv.to_pv() == approx(pv_ref)
 
-    @pytest.mark.parametrize('qubits', [
-        (0, 1), (0, 2), (1, 2), (1, 0), (2, 0), (2, 1)
-    ])
+    @pytest.mark.parametrize("qubits", [(0, 1), (0, 2), (1, 2), (1, 0), (2, 0), (2, 1)])
     def test_apply_2q_random_ptm(self, pauli_vector_cls, dm_basis, qubits):
         unity = np.identity(2)
         unitary = random_unitary_matrix(4, 45).reshape(2, 2, 2, 2)
@@ -219,13 +232,13 @@ class TestPauliVectors:
 
         q0, q1 = qubits
         (q2,) = tuple(q for q in range(3) if q not in qubits)
-        einsum_args = [op, [q0, q1, q0+3, q1+3], unity, [q2, q2+3]]
+        einsum_args = [op, [q0, q1, q0 + 3, q1 + 3], unity, [q2, q2 + 3]]
         op3q = np.einsum(*einsum_args, optimize=True).reshape(8, 8)
 
         dm_before = random_density_matrix(8, seed=46)
         dm_after = op3q @ dm_before @ op3q.conj().T
         assert dm_before.trace() == approx(1)
-        assert dm_after.trace() < 1.
+        assert dm_after.trace() < 1.0
 
         b = (dm_basis(2),)
         bases = b * 3
@@ -237,14 +250,25 @@ class TestPauliVectors:
         assert pv0.to_pv() == approx(pv1.to_pv())
 
     @pytest.mark.parametrize(
-        'bases', [
-            (quantumsim.bases.general(2), quantumsim.bases.general(2), quantumsim.bases.general(2)),
-            (basis_general_reshuffled, basis_general_reshuffled,
-             basis_general_reshuffled),
-            (quantumsim.bases.general(2),
-             quantumsim.bases.general(2).subbasis([0, 1]),
-             quantumsim.bases.general(2).subbasis([0, 1, 2]))
-        ])
+        "bases",
+        [
+            (
+                quantumsim.bases.general(2),
+                quantumsim.bases.general(2),
+                quantumsim.bases.general(2),
+            ),
+            (
+                basis_general_reshuffled,
+                basis_general_reshuffled,
+                basis_general_reshuffled,
+            ),
+            (
+                quantumsim.bases.general(2),
+                quantumsim.bases.general(2).subbasis([0, 1]),
+                quantumsim.bases.general(2).subbasis([0, 1, 2]),
+            ),
+        ],
+    )
     def test_diagonal_meas_prob(self, pauli_vector_cls, bases):
         diag = np.array([0.25, 0, 0.75, 0, 0, 0, 0, 0])
         dm = np.diag(diag)
@@ -266,11 +290,11 @@ class TestPauliVectors:
         assert s.bases[1] == bases[1]
         assert np.allclose(s.diagonal(), diag)
         assert s.trace() == approx(0.75)
-        assert np.allclose(s.meas_prob(0), (0.75, 0.))
-        assert np.allclose(s.meas_prob(1), (0.75, 0.))
+        assert np.allclose(s.meas_prob(0), (0.75, 0.0))
+        assert np.allclose(s.meas_prob(1), (0.75, 0.0))
         assert np.allclose(s.meas_prob(2), (0.25, 0.5))
 
-    @pytest.mark.parametrize('dim1,dim2', [[2, 2], [2, 3], [3, 3]])
+    @pytest.mark.parametrize("dim1,dim2", [[2, 2], [2, 3], [3, 3]])
     def test_get_diagonal(self, pauli_vector_cls, dm_basis, dim1, dim2):
         basis1 = dm_basis(dim1)
         basis2 = dm_basis(dim2)
@@ -278,24 +302,34 @@ class TestPauliVectors:
         # Default initialization
         dm = pauli_vector_cls([basis1, basis2])
         diag = dm.diagonal()
-        diag_ref = np.zeros(dim1*dim2)
-        diag_ref[0] = 1.
+        diag_ref = np.zeros(dim1 * dim2)
+        diag_ref[0] = 1.0
         assert diag == approx(diag_ref)
 
     @pytest.mark.parametrize(
-        'bases', [
-            (quantumsim.bases.general(2), quantumsim.bases.general(2), quantumsim.bases.general(2)),
-            (basis_general_reshuffled, basis_general_reshuffled,
-             basis_general_reshuffled),
+        "bases",
+        [
             (
-                    quantumsim.bases.general(2).subbasis([0, 1]),
-                    quantumsim.bases.general(2).subbasis([0, 1, 2]),
-                    quantumsim.bases.general(2).subbasis([0, 1]),
-            )
-        ])
+                quantumsim.bases.general(2),
+                quantumsim.bases.general(2),
+                quantumsim.bases.general(2),
+            ),
+            (
+                basis_general_reshuffled,
+                basis_general_reshuffled,
+                basis_general_reshuffled,
+            ),
+            (
+                quantumsim.bases.general(2).subbasis([0, 1]),
+                quantumsim.bases.general(2).subbasis([0, 1, 2]),
+                quantumsim.bases.general(2).subbasis([0, 1]),
+            ),
+        ],
+    )
     def test_diagonal_indicated(self, pauli_vector_cls, bases):
-        dm = np.array([[min(i, j)*10 + max(i, j) for i in range(1, 9)]
-                       for j in range(1, 9)])
+        dm = np.array(
+            [[min(i, j) * 10 + max(i, j) for i in range(1, 9)] for j in range(1, 9)]
+        )
         # dm = np.array([[min(i, j)*10 + max(i, j) for i in range(1, 5)]
         #                for j in range(1, 5)])
         diag = np.diag(dm)
@@ -305,4 +339,3 @@ class TestPauliVectors:
         assert s.bases[0] == bases[0]
         assert s.bases[1] == bases[1]
         assert np.allclose(s.diagonal(), diag)
-

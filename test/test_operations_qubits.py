@@ -15,9 +15,9 @@ class TestLibrary:
         sys_bases = qubit_basis * 3
         dm = PauliVector(sys_bases)
 
-        rotate90 = lib.rotate_x(0.5*np.pi)
+        rotate90 = lib.rotate_x(0.5 * np.pi)
         rotate180 = lib.rotate_x(np.pi)
-        rotate360 = lib.rotate_x(2*np.pi)
+        rotate360 = lib.rotate_x(2 * np.pi)
 
         rotate90(dm, 1)
         rotate180(dm, 2)
@@ -36,12 +36,12 @@ class TestLibrary:
 
     def test_rotate_y(self):
         qubit_basis = (bases.general(2),)
-        sys_bases = qubit_basis+qubit_basis+qubit_basis
+        sys_bases = qubit_basis + qubit_basis + qubit_basis
         dm = PauliVector(sys_bases)
 
-        rotate90 = lib.rotate_y(0.5*np.pi)
+        rotate90 = lib.rotate_y(0.5 * np.pi)
         rotate180 = lib.rotate_y(np.pi)
-        rotate360 = lib.rotate_y(2*np.pi)
+        rotate360 = lib.rotate_y(2 * np.pi)
 
         rotate90(dm, 1)
         rotate180(dm, 2)
@@ -63,9 +63,9 @@ class TestLibrary:
         qubit_basis = (bases.general(2),)
         dm = PauliVector(qubit_basis)
 
-        rotate90 = lib.rotate_z(0.5*np.pi)
+        rotate90 = lib.rotate_z(0.5 * np.pi)
         rotate180 = lib.rotate_z(np.pi)
-        rotate360 = lib.rotate_z(2*np.pi)
+        rotate360 = lib.rotate_z(2 * np.pi)
 
         rotate90(dm, 0)
         assert np.allclose(dm.to_pv(), [1, 0, 0, 0])
@@ -74,31 +74,26 @@ class TestLibrary:
 
         # manually apply a Hadamard gate
         had_expansion = np.array([0.5, 0.5, sqrt2, 0])
-        superpos_dm = PauliVector(qubit_basis,
-                                  had_expansion)
+        superpos_dm = PauliVector(qubit_basis, had_expansion)
 
         rotate180(superpos_dm, 0)
-        assert np.allclose(superpos_dm.to_pv(),
-                           [0.5, 0.5, -sqrt2, 0])
+        assert np.allclose(superpos_dm.to_pv(), [0.5, 0.5, -sqrt2, 0])
 
         rotate90(superpos_dm, 0)
-        assert np.allclose(superpos_dm.to_pv(),
-                           [0.5, 0.5, 0, -sqrt2])
+        assert np.allclose(superpos_dm.to_pv(), [0.5, 0.5, 0, -sqrt2])
 
         rotate180(superpos_dm, 0)
-        assert np.allclose(superpos_dm.to_pv(),
-                           [0.5, 0.5, 0, sqrt2])
+        assert np.allclose(superpos_dm.to_pv(), [0.5, 0.5, 0, sqrt2])
 
         rotate360(superpos_dm, 0)
-        assert np.allclose(superpos_dm.to_pv(),
-                           [0.5, 0.5, 0, sqrt2])
+        assert np.allclose(superpos_dm.to_pv(), [0.5, 0.5, 0, sqrt2])
 
     def test_rotate_euler(self):
         qubit_basis = (bases.general(2),)
         dm = PauliVector(qubit_basis + qubit_basis)
 
-        rotate90x = lib.rotate_euler(0, 0.5*np.pi, 0)
-        rotate90y = lib.rotate_euler(0, 0.5*np.pi, 0)
+        rotate90x = lib.rotate_euler(0, 0.5 * np.pi, 0)
+        rotate90y = lib.rotate_euler(0, 0.5 * np.pi, 0)
 
         rotate90x(dm, 0)
         assert np.allclose(dm.meas_prob(0), (0.5, 0.5))
@@ -108,7 +103,7 @@ class TestLibrary:
 
     def test_hadamard(self):
         qubit_basis = (bases.general(2),)
-        sys_bases = qubit_basis+qubit_basis
+        sys_bases = qubit_basis + qubit_basis
         dm = PauliVector(sys_bases)
 
         hadamard = lib.hadamard()
@@ -122,9 +117,7 @@ class TestLibrary:
 
     def test_cnot(self):
         cnot = lib.cnot()
-        qubit_bases = (bases.general(2),
-                       bases.general(2),
-                       bases.general(2))
+        qubit_bases = (bases.general(2), bases.general(2), bases.general(2))
 
         dm = np.diag([0.25, 0, 0.75, 0, 0, 0, 0, 0])
         s = PauliVector.from_dm(dm, qubit_bases)

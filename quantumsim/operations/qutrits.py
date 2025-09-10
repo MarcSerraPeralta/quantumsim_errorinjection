@@ -4,7 +4,7 @@ from .. import bases
 from .operation import Operation
 from ..algebra.tools import verify_kraus_unitarity
 
-_PAULI = dict(zip(['I', 'X', 'Y', 'Z'], bases.gell_mann(2).vectors))
+_PAULI = dict(zip(["I", "X", "Y", "Z"], bases.gell_mann(2).vectors))
 
 bases1_default = (bases.general(3),)
 bases2_default = bases1_default * 2
@@ -31,10 +31,13 @@ def rotate_euler(phi, theta, lamda):
     """
     exp_phi, exp_lambda = np.exp(1j * phi), np.exp(1j * lamda)
     sin_theta, cos_theta = np.sin(theta / 2), np.cos(theta / 2)
-    matrix = np.array([
-        [cos_theta, -1j * exp_lambda * sin_theta, 0],
-        [-1j * exp_phi * sin_theta, exp_phi * exp_lambda * cos_theta, 0],
-        [0, 0, 1]])
+    matrix = np.array(
+        [
+            [cos_theta, -1j * exp_lambda * sin_theta, 0],
+            [-1j * exp_phi * sin_theta, exp_phi * exp_lambda * cos_theta, 0],
+            [0, 0, 1],
+        ]
+    )
     return Operation.from_kraus(matrix, bases1_default)
 
 
@@ -111,30 +114,30 @@ def hadamard():
 
 
 default_cphase_params = dict(
-    leakage_rate=0.,
-    leakage_phase=-np.pi/2,
-    leakage_mobility_rate=0.,
-    leakage_mobility_phase=0.,
-    phase_22=0.,
+    leakage_rate=0.0,
+    leakage_phase=-np.pi / 2,
+    leakage_mobility_rate=0.0,
+    leakage_mobility_phase=0.0,
+    phase_22=0.0,
     q0_t1=np.inf,
     q0_t2=np.inf,
     q1_t1=np.inf,
     q1_t2=np.inf,
     q1_t2_int=None,
-    q0_anharmonicity=0.,
-    q1_anharmonicity=0.,
+    q0_anharmonicity=0.0,
+    q1_anharmonicity=0.0,
     rise_time=2,
     int_time=28,
     phase_corr_time=12,
-    phase_corr_error=0.,
-    quasistatic_flux=0.,
-    sensitivity=0.,
+    phase_corr_error=0.0,
+    quasistatic_flux=0.0,
+    sensitivity=0.0,
     phase_diff_02_12=np.pi,
-    phase_diff_20_21=0.,
+    phase_diff_20_21=0.0,
 )
 
 
-def cphase(angle=np.pi, *, model='legacy', **kwargs):
+def cphase(angle=np.pi, *, model="legacy", **kwargs):
     """
 
     Parameters
@@ -152,53 +155,63 @@ def cphase(angle=np.pi, *, model='legacy', **kwargs):
         Resulting CPhase operation. First qubit is static (low-frequency)
         qubit,
     """
+
     def p(name):
         return kwargs.get(name, default_cphase_params[name])
 
     for param in kwargs.keys():
         if param not in default_cphase_params.keys():
-            raise ValueError('Unknown model parameter: {}'.format(param))
+            raise ValueError("Unknown model parameter: {}".format(param))
 
-    int_time = p('int_time')
-    leakage_rate = p('leakage_rate')
-    qstatic_deviation = int_time * np.pi * \
-                        p('sensitivity') * (p('quasistatic_flux') ** 2)
-    qstatic_interf_leakage = (0.5 - (2 * leakage_rate)) * \
-                             (1 - np.cos(1.5 * qstatic_deviation))
-    phase_corr_error = p('phase_corr_error')
+    int_time = p("int_time")
+    leakage_rate = p("leakage_rate")
+    qstatic_deviation = (
+        int_time * np.pi * p("sensitivity") * (p("quasistatic_flux") ** 2)
+    )
+    qstatic_interf_leakage = (0.5 - (2 * leakage_rate)) * (
+        1 - np.cos(1.5 * qstatic_deviation)
+    )
+    phase_corr_error = p("phase_corr_error")
 
     rot_angle = angle + (1.5 * qstatic_deviation) + (2 * phase_corr_error)
 
-    if model.lower() == 'legacy':
+    if model.lower() == "legacy":
         cz_op = _cphase_legacy(angle, leakage_rate)
-    elif model.lower() == 'netzero':
-        ideal_unitary = expm(1j * _ideal_generator(
-            phase_10=phase_corr_error,
-            phase_01=phase_corr_error + qstatic_deviation,
-            phase_11=rot_angle,
-            phase_02=rot_angle,
-            phase_12=p('phase_diff_02_12') - rot_angle,
-            phase_20=0,
-            phase_21=p('phase_diff_20_21'),
-            phase_22=p('phase_22')
-        ))
-        noisy_unitary = expm(1j * _exchange_generator(
-            leakage=4 * leakage_rate + qstatic_interf_leakage,
-            leakage_phase=p('leakage_phase'),
-            leakage_mobility_rate=p('leakage_mobility_rate'),
-            leakage_mobility_phase=p('leakage_mobility_phase'),
-        ))
+    elif model.lower() == "netzero":
+        ideal_unitary = expm(
+            1j
+            * _ideal_generator(
+                phase_10=phase_corr_error,
+                phase_01=phase_corr_error + qstatic_deviation,
+                phase_11=rot_angle,
+                phase_02=rot_angle,
+                phase_12=p("phase_diff_02_12") - rot_angle,
+                phase_20=0,
+                phase_21=p("phase_diff_20_21"),
+                phase_22=p("phase_22"),
+            )
+        )
+        noisy_unitary = expm(
+            1j
+            * _exchange_generator(
+                leakage=4 * leakage_rate + qstatic_interf_leakage,
+                leakage_phase=p("leakage_phase"),
+                leakage_mobility_rate=p("leakage_mobility_rate"),
+                leakage_mobility_phase=p("leakage_mobility_phase"),
+            )
+        )
         cz_unitary = ideal_unitary @ noisy_unitary
         if not verify_kraus_unitarity(cz_unitary):
-            raise RuntimeError("CPhase gate is not unitary, "
-                               "verify provided parameters.")
+            raise RuntimeError(
+                "CPhase gate is not unitary, " "verify provided parameters."
+            )
         cz_op = Operation.from_kraus(cz_unitary, bases2_default)
     else:
-        raise ValueError('Unknown CZ model: {}'.format(model))
+        raise ValueError("Unknown CZ model: {}".format(model))
     return cz_op
 
 
-def _cphase_legacy(angle=np.pi, leakage=0.):
+def _cphase_legacy(angle=np.pi, leakage=0.0):
     """A perfect controlled phase rotation.
     First qubit is low-frequency, second qubit is high-frequency (it leaks).
 
@@ -222,34 +235,44 @@ def _cphase_legacy(angle=np.pi, leakage=0.):
     return Operation.from_kraus(unitary, bases2_default)
 
 
-def _ideal_generator(phase_01,
-                     phase_02,
-                     phase_10,
-                     phase_11,
-                     phase_12,
-                     phase_20,
-                     phase_21,
-                     phase_22):
-    phases = np.array([0, phase_01, phase_02, phase_10,
-                       phase_11, phase_12, phase_20, phase_21, phase_22])
+def _ideal_generator(
+    phase_01, phase_02, phase_10, phase_11, phase_12, phase_20, phase_21, phase_22
+):
+    phases = np.array(
+        [
+            0,
+            phase_01,
+            phase_02,
+            phase_10,
+            phase_11,
+            phase_12,
+            phase_20,
+            phase_21,
+            phase_22,
+        ]
+    )
     generator = np.diag(phases).astype(complex)
     return generator
 
 
-def _exchange_generator(leakage, leakage_phase,
-                        leakage_mobility_rate, leakage_mobility_phase):
+def _exchange_generator(
+    leakage, leakage_phase, leakage_mobility_rate, leakage_mobility_phase
+):
     generator = np.zeros((9, 9), dtype=complex)
 
-    generator[2][4] = 1j * \
-                      np.arcsin(np.sqrt(leakage)) * np.exp(1j * leakage_phase)
-    generator[4][2] = -1j * \
-                      np.arcsin(np.sqrt(leakage)) * np.exp(-1j * leakage_phase)
+    generator[2][4] = 1j * np.arcsin(np.sqrt(leakage)) * np.exp(1j * leakage_phase)
+    generator[4][2] = -1j * np.arcsin(np.sqrt(leakage)) * np.exp(-1j * leakage_phase)
 
-    generator[5][7] = 1j * np.arcsin(np.sqrt(leakage_mobility_rate)) * \
-                      np.exp(1j * leakage_mobility_phase)
-    generator[7][5] = -1j * \
-                      np.arcsin(np.sqrt(leakage_mobility_rate)) * \
-                      np.exp(-1j * leakage_mobility_phase)
+    generator[5][7] = (
+        1j
+        * np.arcsin(np.sqrt(leakage_mobility_rate))
+        * np.exp(1j * leakage_mobility_phase)
+    )
+    generator[7][5] = (
+        -1j
+        * np.arcsin(np.sqrt(leakage_mobility_rate))
+        * np.exp(-1j * leakage_mobility_phase)
+    )
 
     return generator
 
@@ -284,9 +307,11 @@ def amp_damping(p0_up, p1_up, p1_down, p2_down):
         quantumsim.operation._PTMOperation
     """
     ptm = np.identity(9, dtype=float)
-    ptm[:3, :3] = [[1. - p0_up, p1_down, 0.],
-                   [p0_up, 1. - p1_down - p1_up, p2_down],
-                   [0., p1_up, 1 - p2_down]]
+    ptm[:3, :3] = [
+        [1.0 - p0_up, p1_down, 0.0],
+        [p0_up, 1.0 - p1_down - p1_up, p2_down],
+        [0.0, p1_up, 1 - p2_down],
+    ]
     basis = (bases.general(3),)
     return Operation.from_ptm(ptm, basis, basis)
 
@@ -317,5 +342,6 @@ def meas_butterfly(p0_up, p1_up, p1_down, p2_down):
         quantumsim.operation._PTMOperation
     """
     basis = (bases.general(3).computational_subbasis(),)
-    return amp_damping(0.5*p0_up, 0.5*p1_up, 0.5*p1_down,
-                       0.5*p2_down).set_bases(bases_in=basis, bases_out=basis)
+    return amp_damping(
+        0.5 * p0_up, 0.5 * p1_up, 0.5 * p1_down, 0.5 * p2_down
+    ).set_bases(bases_in=basis, bases_out=basis)
