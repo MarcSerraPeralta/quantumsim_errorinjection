@@ -4,7 +4,7 @@ from . import pauli_vectors, bases
 from .operations import Operation
 from .setups import Setup
 from .states import State
-from .models import Model
+from .models import Model, DiCarloLabModel
 
 PauliVector = pauli_vectors.Default
 
@@ -16,6 +16,7 @@ __all__ = [
     'PauliVector',
     'Setup',
     'State',
+    "DiCarloLabModel",
 ]
 
 
