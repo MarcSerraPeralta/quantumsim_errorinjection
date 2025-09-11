@@ -20,6 +20,8 @@ setup:
     cphase_phase_diff_20_21: 0
     cphase_phase_corr_error: 0
 
+    # assign_matrix[i, j] = prob(noisy outcome j | ideal outcome or initial state i)
+
     # Qubit parameters
   - qubit: D7
     frequency: 4788
@@ -32,6 +34,7 @@ setup:
     meas_prob10: 0
     meas_prob12: 0
     meas_prob21: 0
+    assign_matrix: [[0.999, 0.001, 0.000], [0.032, 0.924, 0.044], [0.004, 0.074, 0.918]]
   - qubit: Z3
     frequency: 6032
     T1: 9500
@@ -39,10 +42,12 @@ setup:
     T2: 18500 #25300
     T2_int: 18500 #25300
     anharmonicity: -291
-    meas_prob01: 0.006
-    meas_prob10: 0.031
-    meas_prob12: 0.002
-    meas_prob21: 0.158
+    meas_prob01: 0.005
+    meas_prob10: 0.072
+    meas_prob12: 0.001
+    meas_prob21: 0.260 # probability |2> decays to |1> during measurement
+    # assign_matrix[i, j] = prob(noisy outcome j | ideal outcome or initial state i)
+    assign_matrix: [[0.993, 0.006, 0.001], [0.031, 0.967, 0.002], [0.026, 0.158, 0.817]]
   - qubit: D4
     frequency: 6802
     T1: 20000
@@ -54,6 +59,7 @@ setup:
     meas_prob10: 0
     meas_prob12: 0
     meas_prob21: 0
+    assign_matrix: [[0.999, 0.001, 0.000], [0.018, 0.798, 0.184], [0.005, 0.184, 0.811]]
   - qubit: Z1
     frequency: 6087
     T1: 18900
@@ -61,10 +67,11 @@ setup:
     T2: 24700
     T2_int: 24700
     anharmonicity: -302
-    meas_prob01: 0.002
-    meas_prob10: 0.031
-    meas_prob12: 0.002
-    meas_prob21: 0.060
+    meas_prob01: 0.001
+    meas_prob10: 0.079
+    meas_prob12: 0.001
+    meas_prob21: 0.112
+    assign_matrix: [[0.991, 0.002, 0.008], [0.031, 0.967, 0.002], [0.010, 0.060, 0.929]]
   - qubit: D1
     frequency: 4843
     T1: 20000
@@ -76,6 +83,7 @@ setup:
     meas_prob10: 0
     meas_prob12: 0
     meas_prob21: 0
+    assign_matrix: [[0.998, 0.001, 0.000], [0.011, 0.851, 0.140], [0.003, 0.131, 0.860]]
   - qubit: X1
     frequency: 5891
     T1: 17100
@@ -83,10 +91,11 @@ setup:
     T2: 29200
     T2_int: 29200
     anharmonicity: -308
-    meas_prob01: 0.001
-    meas_prob10: 0.013
+    meas_prob01: 0.000
+    meas_prob10: 0.025
     meas_prob12: 0.001
-    meas_prob21: 0.028
+    meas_prob21: 0.055
+    assign_matrix: [[0.999, 0.001, 0.000], [0.013, 0.987, 0.001], [0.002, 0.028, 0.970]]
   - qubit: D2
     frequency: 4788
     T1: 20000
@@ -98,6 +107,7 @@ setup:
     meas_prob10: 0
     meas_prob12: 0
     meas_prob21: 0
+    assign_matrix: [[0.997, 0.002, 0.001], [0.026, 0.965, 0.009], [0.039, 0.135, 0.827]]
   - qubit: X2
     frequency: 6107
     T1: 9700
@@ -105,10 +115,11 @@ setup:
     T2: 11200
     T2_int: 11200
     anharmonicity: -302
-    meas_prob01: 0.002
-    meas_prob10: 0.058
-    meas_prob12: 0.028
-    meas_prob21: 0.047
+    meas_prob01: 0.001
+    meas_prob10: 0.107
+    meas_prob12: 0.074
+    meas_prob21: 0.109
+    assign_matrix: [[0.993, 0.002, 0.006], [0.058, 0.914, 0.028], [0.016, 0.047, 0.937]]
   - qubit: D3
     frequency: 4907
     T1: 20000
@@ -120,3 +131,4 @@ setup:
     meas_prob10: 0
     meas_prob12: 0
     meas_prob21: 0
+    assign_matrix: [[0.974, 0.000, 0.026], [0.020, 0.974, 0.006], [0.034, 0.100, 0.863]]
