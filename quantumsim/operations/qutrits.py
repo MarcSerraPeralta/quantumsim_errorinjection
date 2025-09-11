@@ -59,6 +59,24 @@ def rotate_x(angle=np.pi):
     return Operation.from_kraus(matrix, bases1_default)
 
 
+def rotate_x12(angle=np.pi):
+    """A perfect single qubit rotation around :math:`Ox_{12}` axis.
+
+    Parameters
+    ----------
+    angle: float, optional
+        Rotation angle in radians. Default is :math:`\\pi`.
+
+    Returns
+    -------
+    Operation
+        An operation, that corresponds to the rotation.
+    """
+    sin, cos = np.sin(angle / 2), np.cos(angle / 2)
+    matrix = np.array([[1, 0, 0], [0, cos, -1j * sin], [0, -1j * sin, cos]])
+    return Operation.from_kraus(matrix, bases1_default)
+
+
 def rotate_y(angle=np.pi):
     """A perfect single qubit rotation around :math:`Oy` axis.
 
@@ -342,6 +360,6 @@ def meas_butterfly(p0_up, p1_up, p1_down, p2_down):
         quantumsim.operation._PTMOperation
     """
     basis = (bases.general(3).computational_subbasis(),)
-    return amp_damping(
-        0.5 * p0_up, 0.5 * p1_up, 0.5 * p1_down, 0.5 * p2_down
-    ).set_bases(bases_in=basis, bases_out=basis)
+    return amp_damping(p0_up, p1_up, p1_down, p2_down).set_bases(
+        bases_in=basis, bases_out=basis
+    )

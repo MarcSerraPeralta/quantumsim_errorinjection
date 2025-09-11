@@ -118,6 +118,21 @@ class DiCarloLabModel(Model):
         )
 
     @Model.gate(
+        duration="time_1qubit",
+        plot_metadata={"style": "box", "label": "$X12({theta})$"},
+    )
+    def rotate_x12(self, qubit, t_start=None):
+        """Microwave rotation around X12 axis. Parameters: `theta` (degrees)."""
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        half_duration = 0.5 * self.p("time_1qubit", qubit)
+        return (
+            self._idle(qubit, half_duration, t1, t2),
+            ParametrizedOperation(lambda theta: ops.rotate_x12(rad(theta)), basis),
+            self._idle(qubit, half_duration, t1, t2),
+        )
+
+    @Model.gate(
         duration="time_1qubit", plot_metadata={"style": "box", "label": "$Y({theta})$"}
     )
     def rotate_y(self, qubit, t_start=None):
@@ -180,6 +195,7 @@ class DiCarloLabModel(Model):
         plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
     )
     def measure_project(self, qubit, t_start=0):
+        """Classical measurement noise needs to be added afterwards."""
         t1_meas = self.p("T1_meas", qubit)
         half_time = 0.5 * self.p("time_measure", qubit)
 
@@ -192,11 +208,44 @@ class DiCarloLabModel(Model):
                 raise ValueError("Unknown measurement result: {}".format(result))
 
         return (
-            self._idle(qubit, half_time, t1_meas, t1_meas),
-            self._meas_butterfly(qubit),
+            # self._idle(qubit, half_time, t1_meas, t1_meas),
+            # self._meas_butterfly(qubit),
             ParametrizedOperation(project, basis_classical).at(qubit),
             self._meas_butterfly(qubit),
-            self._idle(qubit, half_time, t1_meas, t1_meas),
+            # self._idle(qubit, 2*half_time, t1_meas, t1_meas),
+        )
+
+    @Model.gate(
+        duration="time_measure",
+        plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
+    )
+    def measure_project_0(self, qubit, t_start=0):
+        """Classical measurement noise needs to be added afterwards."""
+        return (
+            self._ptm_project[0].set_bases(basis_classical, basis_classical).at(qubit),
+            self._meas_butterfly(qubit),
+        )
+
+    @Model.gate(
+        duration="time_measure",
+        plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
+    )
+    def measure_project_1(self, qubit, t_start=0):
+        """Classical measurement noise needs to be added afterwards."""
+        return (
+            self._ptm_project[1].set_bases(basis_classical, basis_classical).at(qubit),
+            self._meas_butterfly(qubit),
+        )
+
+    @Model.gate(
+        duration="time_measure",
+        plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
+    )
+    def measure_project_2(self, qubit, t_start=0):
+        """Classical measurement noise needs to be added afterwards."""
+        return (
+            self._ptm_project[2].set_bases(basis_classical, basis_classical).at(qubit),
+            self._meas_butterfly(qubit),
         )
 
     @Model.gate(
