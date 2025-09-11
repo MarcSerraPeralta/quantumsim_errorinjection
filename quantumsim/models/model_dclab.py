@@ -248,6 +248,9 @@ class DiCarloLabModel(Model):
             self._meas_butterfly(qubit),
         )
 
+    def assign_matrix(self, qubit):
+        return np.array(self.p("assign_matrix", qubit))
+
     @Model.gate(
         duration="time_measure",
         plot_metadata={"style": "box", "label": "$Idle$"},
