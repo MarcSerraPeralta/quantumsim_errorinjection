@@ -36,8 +36,8 @@ setup:
     frequency: 6032
     T1: 9500
     T1_meas: 9500
-    T2: 25300
-    T2_int: 25300
+    T2: 18500 #25300
+    T2_int: 18500 #25300
     anharmonicity: -291
     meas_prob01: 0.006
     meas_prob10: 0.031
