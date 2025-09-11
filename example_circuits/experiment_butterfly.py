@@ -79,9 +79,20 @@ for init_state in [0, 1, 2]:
         ideal_outcome_probs[init_state, outcomes[0], outcomes[1]] = prob_outcome
 
 
+noisy_outcome_probs = np.zeros((3, 3, 3))
+assign_matrix = model.assign_matrix(qubit)
+for init_state in [0, 1, 2]:
+    p_ideal = ideal_outcome_probs[init_state]
+    for i, j in product([0, 1, 2], repeat=2):
+        for k, l in product([0, 1, 2], repeat=2):
+            noisy_outcome_probs[init_state, i, j] += (
+                assign_matrix[k, i] * assign_matrix[l, j] * p_ideal[k, l]
+            )
+
+
 # solve system of equation from butterfly experiment
 # https://journals.aps.org/prl/supplemental/10.1103/PhysRevLett.130.250602/MarquesAli_SOM_230514.pdf
-def butterfly_equations(vars, probs=ideal_outcome_probs):
+def butterfly_equations(vars, probs=noisy_outcome_probs):
     vars = vars.reshape(3, 3, 3)
     eqs = [
         0,
@@ -96,13 +107,14 @@ def butterfly_equations(vars, probs=ideal_outcome_probs):
     return eqs
 
 
-x0 = np.zeros(27)  # initial guess
+# intial guess (solution is very dependent on the initial guess)
+x0 = np.zeros(27)
 x0 = x0.reshape(3, 3, 3)
 for i in [0, 1, 2]:
     x0[i, i, i] = 1
 x0 = x0.reshape(-1)
-solution = fsolve(butterfly_equations, x0)
 
+solution = fsolve(butterfly_equations, x0)
 eps = solution.reshape(3, 3, 3)
 
 assign_matrix = np.zeros((3, 3))
