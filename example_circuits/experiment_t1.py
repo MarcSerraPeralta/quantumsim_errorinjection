@@ -46,7 +46,7 @@ for k, n in enumerate(num_idling_gates):
     circuit = Circuit(
         qubits=[qubit],
         gates=[
-            model.rotate_x(qubit, t_start=0),
+            model.rotate_x_180(qubit, t_start=0),
             *idling,
             model.measure_project_1(qubit, t_start=20 + n * 20),
         ],
@@ -57,7 +57,6 @@ for k, n in enumerate(num_idling_gates):
         plt.show()
 
     finalized_circuit = model.finalize(circuit)
-    finalized_circuit = finalized_circuit(theta=180)
 
     state = State([qubit], dim=3)  # initialization in ground state
     prob_init_state = np.trace(state.pauli_vector.to_dm())

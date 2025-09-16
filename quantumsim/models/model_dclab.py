@@ -119,6 +119,20 @@ class DiCarloLabModel(Model):
 
     @Model.gate(
         duration="time_1qubit",
+        plot_metadata={"style": "box", "label": "$X(180)$"},
+    )
+    def rotate_x_180(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        half_duration = 0.5 * self.p("time_1qubit", qubit)
+        return (
+            self._idle(qubit, half_duration, t1, t2),
+            ops.rotate_x(rad(180)).set_bases(basis, basis).at(qubit),
+            self._idle(qubit, half_duration, t1, t2),
+        )
+
+    @Model.gate(
+        duration="time_1qubit",
         plot_metadata={"style": "box", "label": "$X12({theta})$"},
     )
     def rotate_x12(self, qubit, t_start=None):
@@ -133,6 +147,20 @@ class DiCarloLabModel(Model):
         )
 
     @Model.gate(
+        duration="time_1qubit",
+        plot_metadata={"style": "box", "label": "$X12(180)$"},
+    )
+    def rotate_x12_180(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        half_duration = 0.5 * self.p("time_1qubit", qubit)
+        return (
+            self._idle(qubit, half_duration, t1, t2),
+            ops.rotate_x12(rad(180)).set_bases(basis, basis).at(qubit),
+            self._idle(qubit, half_duration, t1, t2),
+        )
+
+    @Model.gate(
         duration="time_1qubit", plot_metadata={"style": "box", "label": "$Y({theta})$"}
     )
     def rotate_y(self, qubit, t_start=None):
@@ -143,6 +171,34 @@ class DiCarloLabModel(Model):
         return (
             self._idle(qubit, half_duration, t1, t2),
             ParametrizedOperation(lambda theta: ops.rotate_y(rad(theta)), basis),
+            self._idle(qubit, half_duration, t1, t2),
+        )
+
+    @Model.gate(
+        duration="time_1qubit",
+        plot_metadata={"style": "box", "label": "$Y(90)$"},
+    )
+    def rotate_y_90(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        half_duration = 0.5 * self.p("time_1qubit", qubit)
+        return (
+            self._idle(qubit, half_duration, t1, t2),
+            ops.rotate_y(rad(90)).set_bases(basis, basis).at(qubit),
+            self._idle(qubit, half_duration, t1, t2),
+        )
+
+    @Model.gate(
+        duration="time_1qubit",
+        plot_metadata={"style": "box", "label": "$Y(-90)$"},
+    )
+    def rotate_y_m90(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        half_duration = 0.5 * self.p("time_1qubit", qubit)
+        return (
+            self._idle(qubit, half_duration, t1, t2),
+            ops.rotate_y(rad(-90)).set_bases(basis, basis).at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
