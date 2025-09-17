@@ -62,6 +62,7 @@ setup:
     cphase_phase_diff_02_12: 3.141592653589793
     cphase_phase_diff_20_21: 0
     cphase_phase_corr_error: 0.314
+    zz_coupling_wfreq: 0.002 # ns^-1
   - qubit: D4
     frequency: 6802
     T1: 20000

@@ -117,3 +117,27 @@ def _exchange_generator(
         * np.exp(-1j * leakage_mobility_phase)
     )
     return generator
+
+
+def zz_coupling(
+    zz_coupling_11,
+):
+    zz_unitary = expm(
+        1j
+        * _ideal_generator(
+            phase_10=0,
+            phase_01=0,
+            phase_11=zz_coupling_11,
+            phase_02=0,
+            phase_12=0,
+            phase_20=0,
+            phase_21=0,
+            phase_22=0,
+        )
+    )
+    if not verify_kraus_unitarity(zz_unitary):
+        raise RuntimeError(
+            "ZZ-coupling gate is not unitary, " "verify provided parameters."
+        )
+    zz_op = Operation.from_kraus(zz_unitary, (bases.general(3),) * 2)
+    return zz_op

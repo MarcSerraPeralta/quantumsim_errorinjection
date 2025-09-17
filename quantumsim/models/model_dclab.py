@@ -2,7 +2,7 @@ import numpy as np
 import quantumsim.operations.qutrits as ops
 from quantumsim import bases
 from quantumsim.operations import Operation, ParametrizedOperation
-from .cphase import cphase
+from .cphase import cphase, zz_coupling
 from quantumsim.models import Model
 
 basis = (bases.general(3),)
@@ -27,6 +27,69 @@ class DiCarloLabModel(Model):
             self.measure = self.measure_project
         else:
             self.measure = self.measure_partial
+
+    @Model.gate(
+        duration=0,
+        plot_metadata={
+            "style": "line",
+            "markers": [
+                {"style": "marker", "label": "s"},
+                {"style": "marker", "label": "s"},
+            ],
+        },
+    )
+    def zz_coupling_1q(self, qubit_static, qubit_fluxed, t_start=None):
+        time = self.p("time_1qubit", qubit_static, qubit_fluxed)
+        zz_coupling_ = (
+            zz_coupling(
+                self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
+            )
+            .set_bases(basis * 2, basis * 2)
+            .at(qubit_static, qubit_fluxed),
+        )
+        return zz_coupling_
+
+    @Model.gate(
+        duration=0,
+        plot_metadata={
+            "style": "line",
+            "markers": [
+                {"style": "marker", "label": "s"},
+                {"style": "marker", "label": "s"},
+            ],
+        },
+    )
+    def zz_coupling_2q(self, qubit_static, qubit_fluxed, t_start=None):
+        time = self.p("time_2qubit", qubit_static, qubit_fluxed)
+        zz_coupling_ = (
+            zz_coupling(
+                self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
+            )
+            .set_bases(basis * 2, basis * 2)
+            .at(qubit_static, qubit_fluxed),
+        )
+        return zz_coupling_
+
+    @Model.gate(
+        duration=0,
+        plot_metadata={
+            "style": "line",
+            "markers": [
+                {"style": "marker", "label": "s"},
+                {"style": "marker", "label": "s"},
+            ],
+        },
+    )
+    def zz_coupling_measurement(self, qubit_static, qubit_fluxed, t_start=None):
+        time = self.p("time_measure", qubit_static, qubit_fluxed)
+        zz_coupling_ = (
+            zz_coupling(
+                self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
+            )
+            .set_bases(basis * 2, basis * 2)
+            .at(qubit_static, qubit_fluxed),
+        )
+        return zz_coupling_
 
     @Model.gate(
         duration="time_2qubit",
