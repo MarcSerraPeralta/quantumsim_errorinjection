@@ -8,17 +8,16 @@ from quantumsim.operations import Operation
 
 def cphase(
     angle,
-    quasistatic_flux,
-    time_int,
     leakage_rate,
     leakage_phase,
     leakage_mobility_rate,
     leakage_mobility_phase,
-    flux_sensitivity,
     phase_22,
     phase_diff_02_12,
     phase_diff_20_21,
-    phase_corr_error,
+    phase_corr_error_01,
+    phase_corr_error_10,
+    phase_corr_error_2q,
 ):
     """
 
@@ -44,18 +43,19 @@ def cphase(
         Resulting CPhase operation. First qubit is static (low-frequency)
         qubit,
     """
-    qstatic_deviation = time_int * np.pi * flux_sensitivity * quasistatic_flux**2
-    qstatic_interf_leakage = (0.5 - (2 * leakage_rate)) * (
-        1 - np.cos(1.5 * qstatic_deviation)
+    qstatic_interf_leakage = 0
+    rot_angle = (
+        angle
+        + 1.5 * 0
+        + phase_corr_error_2q
+        + (phase_corr_error_01 + phase_corr_error_10)
     )
-
-    rot_angle = angle + 1.5 * qstatic_deviation + 2 * phase_corr_error
 
     ideal_unitary = expm(
         1j
         * _ideal_generator(
-            phase_10=phase_corr_error,
-            phase_01=phase_corr_error + qstatic_deviation,
+            phase_10=phase_corr_error_10,
+            phase_01=phase_corr_error_01,
             phase_11=rot_angle,
             phase_02=rot_angle,
             phase_12=phase_diff_02_12 - rot_angle,

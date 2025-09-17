@@ -19,14 +19,15 @@ np.set_printoptions(precision=4, suppress=True)
 # Parameters
 
 noise_file = "setup_noisy.yaml"
+noise_file = "setup_conditional_oscillation.yaml"
 # noise_file = "setup_perfect.yaml"
 
 CONDITIONAL_ANGLES = np.linspace(0, 360, 25)
 
-qubit_1 = "Z3"
-qubit_2 = "D1"
+qubit_1 = "D1"
+qubit_2 = "Z3"
 
-PLOT_CIRCUITS = False
+PLOT_CIRCUITS = True
 
 ###################
 
@@ -60,7 +61,7 @@ for i, conditional_x in enumerate([0, 1]):
             ]
             circuit = Circuit(qubits=[qubit_1, qubit_2], gates=gates)
 
-            if PLOT_CIRCUITS:
+            if PLOT_CIRCUITS and (i == 0 and j == 0 and k == 0):
                 plot(circuit)
                 plt.show()
 
