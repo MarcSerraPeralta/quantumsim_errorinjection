@@ -430,6 +430,17 @@ class DiCarloLabModel(Model):
 
         return (self._idle(qubit, idling_time, t1, t2),)
 
+    @Model.gate(
+        duration="time_measure",
+        plot_metadata={"style": "box", "label": "$Idle$"},
+    )
+    def idle_meas_gate(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        idling_time = self.p("time_measure", qubit)
+
+        return (self._idle(qubit, idling_time, t1, t2),)
+
     def _idle(self, qubit, duration, t1, t2):
         if np.isfinite(t1) and np.isfinite(t2):
             t_phi = 1.0 / (1.0 / t2 - 0.5 / t1)
