@@ -15,8 +15,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 import numpy as np
-from numpy._typing import NDArray
-
+from numpy.typing import NDArray
+from tqdm import tqdm
 from quantumsim import State
 from quantumsim.circuits import FinalizedCircuit
 from quantumsim.operations.state_projector import IStateKey, StateProjector
@@ -122,12 +122,18 @@ class RepeatedCircuitEvaluation:
         ]
         return result
 
-    def evaluate_as_array(self, depth: int = 1, rng: Optional = None) -> NDArray[np.int8]:
+    def evaluate_as_array(self, depth: int = 1, repetitions: int = 1, rng: Optional = None, verbose: bool = False) -> NDArray[np.int8]:
         """:return: Array-like of 'evaluated' state outcomes."""
-        evaluate_as_index: NDArray[np.int8] = self._evaluate_as_index(
-            depth=depth,
-            rng=rng,
-        )
-        result = self._state_projector.output_state_vector[evaluate_as_index]
+        result: NDArray[np.int8] = np.zeros(shape=(
+            repetitions,
+            depth,
+            self._state_projector.nr_measured_qubits,
+        ), dtype=np.int8)
+        for i in tqdm(range(repetitions), desc="Decision-tree cached repetitions", disable=not verbose):
+            evaluate_as_index: NDArray[np.int8] = self._evaluate_as_index(
+                depth=depth,
+                rng=rng,
+            )
+            result[i, :, :] = self._state_projector.output_state_vector[evaluate_as_index]
         return result
     # endregion
