@@ -92,15 +92,15 @@ class RepeatedCircuitEvaluation:
         parent.children[state_key] = child_node
         return child_node
 
-    def _evaluate_as_index(self, times: int = 1, rng: Optional = None) -> NDArray[np.int8]:
+    def _evaluate_as_index(self, depth: int = 1, rng: Optional = None) -> NDArray[np.int8]:
         """:return: Array-like of 'evaluated' state outcomes."""
         if rng is None:
             rng = np.random.default_rng()
 
-        result: np.ndarray = np.empty(shape=times, dtype=np.int8)
+        result: np.ndarray = np.empty(shape=depth, dtype=np.int8)
         node = self.root
 
-        for i in range(times):
+        for i in range(depth):
             idx = fast_choice(node.p_state, rng)
             state_key: IStateKey = self.output_state_vector_keys[idx]
             node = self.add_node(
@@ -110,10 +110,10 @@ class RepeatedCircuitEvaluation:
             result[i] = idx
         return result
 
-    def evaluate(self, times: int = 1, rng: Optional = None) -> List[IStateKey]:
+    def evaluate(self, depth: int = 1, rng: Optional = None) -> List[IStateKey]:
         """:return: Array-like of 'evaluated' state outcomes."""
         evaluate_as_index: NDArray[np.int8] = self._evaluate_as_index(
-            times=times,
+            depth=depth,
             rng=rng,
         )
         result: List[IStateKey] = [
@@ -122,10 +122,10 @@ class RepeatedCircuitEvaluation:
         ]
         return result
 
-    def evaluate_as_array(self, times: int = 1, rng: Optional = None) -> NDArray[np.int8]:
+    def evaluate_as_array(self, depth: int = 1, rng: Optional = None) -> NDArray[np.int8]:
         """:return: Array-like of 'evaluated' state outcomes."""
         evaluate_as_index: NDArray[np.int8] = self._evaluate_as_index(
-            times=times,
+            depth=depth,
             rng=rng,
         )
         result = self._state_projector.output_state_vector[evaluate_as_index]
