@@ -92,9 +92,10 @@ class StateProjector:
 
     def trace_out(self, state: State, state_key: IStateKey) -> State:
         """:return: Traced-out Pauli state vector based on measured product state."""
+        output_state = state.copy()
         finalized_meas_circuit = self._meas_outcome_to_circuit[state_key]
-        finalized_meas_circuit @ state
-        return state
+        finalized_meas_circuit @ output_state
+        return output_state
     # endregion
 
     # region Static Class Methods
