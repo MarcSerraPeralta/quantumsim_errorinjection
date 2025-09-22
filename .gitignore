@@ -208,3 +208,5 @@ __marimo__/
 
 # Annoying macOS files
 .DS_Store
+
+.idea
