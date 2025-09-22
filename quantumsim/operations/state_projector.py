@@ -2,7 +2,7 @@
 # Module describing state measurement projector
 # -------------------------------------------
 from itertools import product
-from typing import List, Dict, Callable, Iterable
+from typing import List, Dict, Callable, Iterable, Optional
 import numpy as np
 from numpy._typing import NDArray
 from quantumsim import DiCarloLabModel, State
@@ -27,6 +27,11 @@ class StateProjector:
     def output_state_vector_keys(self) -> List[IStateKey]:
         """:return: Array-like of output states in string representation."""
         return self._cartesian_product_array_keys
+
+    @property
+    def ordered_qubit_ids(self) -> List[str]:
+        """:return: Array-like of order qubit-IDs"""
+        return self._ordered_qubit_ids
 
     @property
     def nr_measured_qubits(self) -> int:
@@ -96,6 +101,11 @@ class StateProjector:
         finalized_meas_circuit = self._meas_outcome_to_circuit[state_key]
         finalized_meas_circuit @ output_state
         return output_state
+
+    def get_acquisition_index(self, qubit_id: str) -> Optional[int]:
+        if qubit_id not in self._ordered_meas_qubit_ids:
+            return None
+        return self._ordered_meas_qubit_ids.index(qubit_id)
     # endregion
 
     # region Static Class Methods

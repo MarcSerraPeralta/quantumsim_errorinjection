@@ -51,18 +51,12 @@ class RepeatedCircuitEvaluation:
     Behaviour class, exposing methods for repeated transformation of Pauli state vector under circuit evaluation.
     """
 
-    # region Class Properties
-    @property
-    def output_state_vector_keys(self) -> List[IStateKey]:
-        """:return: Array-like of output states in string representation."""
-        return self._state_projector.output_state_vector_keys
-    # endregion
-
     # region Class Constructor
-    def __init__(self, initial_state: State, circuit: FinalizedCircuit, state_projector: StateProjector):
+    def __init__(self, initial_state: State, circuit: FinalizedCircuit, state_projector: StateProjector, final_state_projector: StateProjector):
         self._initial_state: State = initial_state
         self._circuit: FinalizedCircuit = circuit
         self._state_projector: StateProjector = state_projector
+        self._final_state_projector: StateProjector = final_state_projector
         self.root = Node(
             depth=0,
             rho_pre=initial_state,
@@ -71,13 +65,21 @@ class RepeatedCircuitEvaluation:
     # endregion
 
     # region Class Methods
-    def add_node(self, parent: Node, state_key: IStateKey) -> Node:
+    def get_state_projector_at_depth(self, depth: int, max_depth: int) -> StateProjector:
+        """Return the correct measurement channel for a given depth."""
+        return self._state_projector if depth < max_depth - 1 else self._final_state_projector
+
+    def add_node(self, parent: Node, state_key: IStateKey, max_depth: int) -> Node:
         """:return: Node after extending parent evaluation."""
         if state_key in parent.children:  # Cached
             return parent.children[state_key]
+        state_projector: StateProjector = self.get_state_projector_at_depth(
+            depth=parent.depth,
+            max_depth=max_depth,
+        )
 
         # Trace state according to measured state-key
-        rho_post: State = self._state_projector.trace_out(
+        rho_post: State = state_projector.trace_out(
             state=parent.rho_pre,
             state_key=state_key,
         )
@@ -87,7 +89,10 @@ class RepeatedCircuitEvaluation:
         child_node: Node = Node(
             depth=parent.depth + 1,
             rho_pre=rho_post,
-            p_state=self._state_projector.construct_output_vector(state=rho_post)
+            p_state=self.get_state_projector_at_depth(
+                depth=parent.depth + 1,
+                max_depth=max_depth,
+            ).construct_output_vector(state=rho_post)
         )
         parent.children[state_key] = child_node
         return child_node
@@ -102,10 +107,14 @@ class RepeatedCircuitEvaluation:
 
         for i in range(depth):
             idx = fast_choice(node.p_state, rng)
-            state_key: IStateKey = self.output_state_vector_keys[idx]
+            state_key: IStateKey = self.get_state_projector_at_depth(
+                depth=i,
+                max_depth=depth
+            ).output_state_vector_keys[idx]
             node = self.add_node(
                 parent=node,
-                state_key=state_key
+                state_key=state_key,
+                max_depth=depth,
             )
             result[i] = idx
         return result
@@ -117,8 +126,11 @@ class RepeatedCircuitEvaluation:
             rng=rng,
         )
         result: List[IStateKey] = [
-            self.output_state_vector_keys[idx]
-            for idx in evaluate_as_index
+            self.get_state_projector_at_depth(
+                depth=i,
+                max_depth=depth,
+            ).output_state_vector_keys[idx]
+            for i, idx in enumerate(evaluate_as_index)
         ]
         return result
 
@@ -127,13 +139,23 @@ class RepeatedCircuitEvaluation:
         result: NDArray[np.int8] = np.zeros(shape=(
             repetitions,
             depth,
-            self._state_projector.nr_measured_qubits,
+            self._final_state_projector.nr_measured_qubits,
         ), dtype=np.int8)
         for i in tqdm(range(repetitions), desc="Decision-tree cached repetitions", disable=not verbose):
             evaluate_as_index: NDArray[np.int8] = self._evaluate_as_index(
                 depth=depth,
                 rng=rng,
             )
-            result[i, :, :] = self._state_projector.output_state_vector[evaluate_as_index]
+            # Add acquisitions for ancilla qubits
+            for j, qubit_id in enumerate(self._state_projector.ordered_qubit_ids):
+                acquisition_index: Optional[int] = self._state_projector.get_acquisition_index(qubit_id=qubit_id)
+                if acquisition_index is not None:
+                    result[i, :-1, j] = self._state_projector.output_state_vector[evaluate_as_index[:-1]][:, acquisition_index]
+            # Add acquisitions for final data and ancilla qubits
+            for j, qubit_id in enumerate(self._final_state_projector.ordered_qubit_ids):
+                acquisition_index: Optional[int] = self._final_state_projector.get_acquisition_index(qubit_id=qubit_id)
+                if acquisition_index is not None:
+                    result[i, -1:, j] = self._final_state_projector.output_state_vector[evaluate_as_index[-1:]][:, acquisition_index]
+
         return result
     # endregion

@@ -43,6 +43,15 @@ state_projector = StateProjector(
     },
     model=model,
 )
+final_state_projector = StateProjector(
+    ordered_qubit_ids=qubits,
+    meas_qubit_ids=qubits,
+    dim_per_qubit={
+        qubit_id: 2
+        for qubit_id in qubits
+    },
+    model=model,
+)
 t_sqg: float = 20
 t_tqg: float = 60
 
@@ -67,10 +76,10 @@ repetition_tree = RepeatedCircuitEvaluation(
     initial_state=state,
     circuit=finalized_circuit,
     state_projector=state_projector,
+    final_state_projector=final_state_projector,
 )
 print(state_projector.output_state_vector_keys)
-print(repetition_tree.evaluate(depth=5))
-print(repetition_tree.evaluate_as_array(depth=5))
+print(repetition_tree.evaluate_as_array(depth=10, repetitions=2))
 
 # finalized_circuit @ state
 #
