@@ -5,13 +5,76 @@ from quantumsim.operations.repetition_tree import RepeatedCircuitEvaluation
 warnings.filterwarnings("ignore")
 import os
 import numpy as np
+from typing import List
 from quantumsim.circuits import Circuit
 from quantumsim import Setup
 from quantumsim.states.state import State
 from quantumsim.models import DiCarloLabModel
 from quantumsim.operations.state_projector import StateProjector
+from qce_circuit.language.intrf_declarative_circuit import (
+    InitialStateEnum,
+    InitialStateContainer,
+)
+from qce_circuit.structure.acquisition_indexing.kernel_repetition_code import (
+    SimulatedRepetitionExperimentKernel,
+)
+from qce_circuit.connectivity.intrf_connectivity_surface_code import ISurfaceCodeLayer, IQubitID
+from qce_interp.interface_definitions.intrf_error_identifier import ErrorDetectionIdentifier
+from qce_interp.utilities.expected_parities import initial_state_to_expected_parity
+from qce_interp.interface_definitions.intrf_state_classification import (
+    StateClassifierContainer,
+    ParityType,
+)
 
 np.set_printoptions(precision=4, suppress=True)
+
+
+def construct_error_identifier(
+    result_tensor: np.ndarray,
+    depth: int,
+    repetitions: int,
+    code_layout: ISurfaceCodeLayer,
+    involved_data_qubit_ids: List[IQubitID],
+    involved_ancilla_qubit_ids: List[IQubitID],
+) -> ErrorDetectionIdentifier:
+    expected_parity = initial_state_to_expected_parity(
+        initial_state=InitialStateContainer.from_ordered_list(
+            initial_states=[
+                InitialStateEnum.ONE if (i % 2 == 1) and not schedule_settings.initial_state_even else InitialStateEnum.ZERO
+                for i, qubit_id in enumerate(noise_settings.involved_data_qubit_ids)
+            ]
+        ),
+        parity_layout=code_layout,
+        involved_data_qubit_ids=noise_settings.involved_data_qubit_ids,
+        involved_ancilla_qubit_ids=noise_settings.involved_ancilla_qubit_ids,
+        inverse_parity=False,
+        stabilizer_active=True,
+    )
+
+    return ErrorDetectionIdentifier(
+        classifier_lookup={
+            qubit_id: StateClassifierContainer(
+                state_classification=result_tensor[:, :, i].flatten(),
+                _expected_parity=ParityType.EVEN if qubit_id not in expected_parity else expected_parity[qubit_id],
+                _stabilizer_reset=False,
+            )
+            for i, qubit_id in enumerate(noise_settings.involved_qubit_ids)
+        },
+        index_kernel=SimulatedRepetitionExperimentKernel(
+            rounds=[schedule_settings.qec_round],
+            involved_data_qubit_ids=noise_settings.involved_data_qubit_ids,
+            involved_ancilla_qubit_ids=noise_settings.involved_ancilla_qubit_ids,
+            experiment_repetitions=schedule_settings.repetitions,
+        ),
+        involved_qubit_ids=noise_settings.involved_qubit_ids,
+        device_layout=noise_settings.connectivity,
+        qec_rounds=[schedule_settings.qec_round],
+        use_heralded_post_selection=False,
+        use_projected_leakage_post_selection=False,
+        use_stabilizer_leakage_post_selection=False,
+        post_selection_qubits=None,
+        use_computational_parity=True,
+    )
 
 ###################
 # Parameters
@@ -79,7 +142,7 @@ repetition_tree = RepeatedCircuitEvaluation(
     final_state_projector=final_state_projector,
 )
 print(state_projector.output_state_vector_keys)
-print(repetition_tree.evaluate_as_array(depth=10, repetitions=2))
+print(repetition_tree.evaluate_as_array(depth=10, repetitions=2).shape)
 
 # finalized_circuit @ state
 #

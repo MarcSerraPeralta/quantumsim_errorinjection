@@ -6,3 +6,6 @@ sympy
 pytools
 matplotlib
 tqdm
+
+git+https://github.com/MiniSean/QCoCircuits.git
+git+https://github.com/MiniSean/QECInterpreter.git

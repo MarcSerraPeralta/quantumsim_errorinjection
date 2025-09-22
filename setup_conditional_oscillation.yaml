@@ -41,7 +41,7 @@ setup:
   - qubits: ["D1", "Z3"] # qubit static, qubit fluxed
     quasistatic_flux: 100
     cphase_leakage_rate: 0.1 # L1
-    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_phase: 1.5707963267948966  # Always pi/2 based on
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
     cphase_flux_sensitivity: 0
