@@ -134,7 +134,7 @@ setup:
     assign_matrix: [[0.974, 0.000, 0.026], [0.020, 0.974, 0.006], [0.034, 0.100, 0.863]]
   - qubits: ["Z1", "D4"] # qubit static, qubit fluxed
     quasistatic_flux: 0
-    cphase_leakage_rate: 0.43 # L1
+    cphase_leakage_rate: 0.0043 # L1
     cphase_leakage_phase: 1.5707963267948966  # Always pi/2
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
@@ -147,7 +147,7 @@ setup:
     cphase_phase_corr_error_2q: 0.003488
   - qubits: ["D1", "Z1"] # qubit static, qubit fluxed
     quasistatic_flux: 0
-    cphase_leakage_rate: 0.27 # L1
+    cphase_leakage_rate: 0.0027 # L1
     cphase_leakage_phase: 1.5707963267948966
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
@@ -160,7 +160,7 @@ setup:
     cphase_phase_corr_error_2q: 0.003488
   - qubits: ["D1", "X1"] # qubit static, qubit fluxed
     quasistatic_flux: 0
-    cphase_leakage_rate: 0.62 # L1
+    cphase_leakage_rate: 0.0062 # L1
     cphase_leakage_phase: 1.5707963267948966
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
@@ -173,7 +173,7 @@ setup:
     cphase_phase_corr_error_2q: -0.001744
   - qubits: ["D2", "X1"] # qubit static, qubit fluxed
     quasistatic_flux: 0
-    cphase_leakage_rate: 0.98 # L1
+    cphase_leakage_rate: 0.0098 # L1
     cphase_leakage_phase: 1.5707963267948966
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
