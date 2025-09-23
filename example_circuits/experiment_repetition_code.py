@@ -1,8 +1,5 @@
 import warnings
-
 from quantumsim.operations.repetition_tree import RepeatedCircuitEvaluation
-
-warnings.filterwarnings("ignore")
 import os
 import numpy as np
 from typing import List
@@ -44,6 +41,7 @@ from qce_interp.interface_definitions.intrf_state_classification import (
     ParityType,
 )
 
+warnings.filterwarnings("ignore")
 np.set_printoptions(precision=4, suppress=True)
 
 
@@ -212,7 +210,7 @@ def distance_3_bitflip_gates():
         model.idle_tq_gate(qubit_d4, t_start=t_ref),
         model.idle_tq_gate(qubit_z1, t_start=t_ref),
         model.idle_tq_gate(qubit_d1, t_start=t_ref),
-        model.cphase(qubit_x1, qubit_d2, t_start=t_ref),
+        model.cphase(qubit_d2, qubit_x1, t_start=t_ref),
     ])
     t_ref += t_tqg
     # X1-D1
@@ -220,7 +218,7 @@ def distance_3_bitflip_gates():
         model.idle_tq_gate(qubit_d4, t_start=t_ref),
         model.idle_tq_gate(qubit_z1, t_start=t_ref),
         model.idle_tq_gate(qubit_d2, t_start=t_ref),
-        model.cphase(qubit_x1, qubit_d1, t_start=t_ref),
+        model.cphase(qubit_d1, qubit_x1, t_start=t_ref),
     ])
     t_ref += t_tqg
     # Middle of Parities
@@ -237,7 +235,7 @@ def distance_3_bitflip_gates():
         model.idle_tq_gate(qubit_d4, t_start=t_ref),
         model.idle_tq_gate(qubit_x1, t_start=t_ref),
         model.idle_tq_gate(qubit_d2, t_start=t_ref),
-        model.cphase(qubit_z1, qubit_d1, t_start=t_ref),
+        model.cphase(qubit_d1, qubit_z1, t_start=t_ref),
     ])
     t_ref += t_tqg
     # Z1-D4
@@ -266,22 +264,9 @@ def distance_3_bitflip_gates():
 
     return gates
 
-# gates = [
-#     model.idle_sq_gate(qubit_d4, t_start=0),
-#     model.idle_sq_gate(qubit_z1, t_start=0),
-#     model.idle_sq_gate(qubit_d1, t_start=0),
-#     model.idle_sq_gate(qubit_x1, t_start=0),
-#     model.idle_sq_gate(qubit_d2, t_start=0),
-#
-#     model.idle_sq_gate(qubit_d4, t_start=t_sqg),
-#     model.idle_sq_gate(qubit_z1, t_start=t_sqg),
-#     model.idle_sq_gate(qubit_d1, t_start=t_sqg),
-#     model.idle_sq_gate(qubit_x1, t_start=t_sqg),
-#     model.idle_sq_gate(qubit_d2, t_start=t_sqg),
-# ]
-
 circuit = Circuit(qubits=qubits, gates=distance_3_bitflip_gates())
 finalized_circuit = model.finalize(circuit)
+finalized_circuit = finalized_circuit(angle=180)
 state = State(qubits, dim=3)  # initialization in ground state
 
 repetition_tree = RepeatedCircuitEvaluation(
