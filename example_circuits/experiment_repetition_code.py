@@ -40,6 +40,10 @@ from qce_interp.interface_definitions.intrf_state_classification import (
     StateClassifierContainer,
     ParityType,
 )
+from qce_interp.visualization.plot_defect_rate import (
+    plot_all_defect_rate,
+)
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 np.set_printoptions(precision=4, suppress=True)
@@ -276,10 +280,11 @@ repetition_tree = RepeatedCircuitEvaluation(
     final_state_projector=final_state_projector,
 )
 qec_rounds: int = 10
-repetitions: int = 10
+repetitions: int = 100
 result_tensor = repetition_tree.evaluate_as_array(
     depth=qec_rounds,
     repetitions=repetitions,
+    verbose=True,
 )
 
 error_identifier = construct_error_identifier(
@@ -298,6 +303,11 @@ error_identifier = construct_error_identifier(
     ],
 )
 print(error_identifier)
+plot_all_defect_rate(
+    error_identifier=error_identifier,
+    included_rounds=qec_rounds,
+)
+plt.show()
 
 # finalized_circuit @ state
 #
