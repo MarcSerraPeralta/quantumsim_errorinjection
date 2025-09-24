@@ -84,15 +84,15 @@ class StateProjector:
     # region Class Methods
     def construct_output_vector(self, state: State) -> NDArray[np.float32]:
         """:return: Probability vector for each product state measured."""
+        # TODO: Also store finalized meas circuit with all output probabilities to prevent re-calculation.
         result: NDArray[np.float32] = np.empty(shape=(len(self.output_state_vector)), dtype=np.float32)
-        prob_init_state = np.trace(state.pauli_vector.to_dm())
 
         for i, meas_outcome_key in enumerate(self._cartesian_product_array_keys):  # '00', '01', '02', '10', ...
             output_state = state.copy()
             finalized_meas_circuit = self._meas_outcome_to_circuit[meas_outcome_key]  # Circuit containing only measure_project
             finalized_meas_circuit @ output_state
-            prob_out_state = np.trace(output_state.pauli_vector.to_dm())
-            result[i] = np.real(prob_out_state / prob_init_state)
+            prob_out_state = output_state.trace()
+            result[i] = prob_out_state  # Already normalized
         return result
 
     def trace_out(self, state: State, state_key: IStateKey) -> State:
@@ -100,6 +100,7 @@ class StateProjector:
         output_state = state.copy()
         finalized_meas_circuit = self._meas_outcome_to_circuit[state_key]
         finalized_meas_circuit @ output_state
+        output_state.pauli_vector.renormalize()  # Renormalized Pauli vector
         return output_state
 
     def get_acquisition_index(self, qubit_id: str) -> Optional[int]:

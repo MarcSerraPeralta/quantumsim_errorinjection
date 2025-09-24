@@ -73,6 +73,7 @@ class RepeatedCircuitEvaluation:
         """:return: Node after extending parent evaluation."""
         if state_key in parent.children:  # Cached
             return parent.children[state_key]
+
         state_projector: StateProjector = self.get_state_projector_at_depth(
             depth=parent.depth,
             max_depth=max_depth,

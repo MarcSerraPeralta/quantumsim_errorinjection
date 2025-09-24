@@ -319,7 +319,7 @@ repetition_tree = RepeatedCircuitEvaluation(
     state_projector=state_projector,
     final_state_projector=final_state_projector,
 )
-qec_rounds: int = 7
+qec_rounds: int = 10
 repetitions: int = 10000
 result_tensor = repetition_tree.evaluate_as_array(
     depth=qec_rounds + 1,
