@@ -1,8 +1,10 @@
 import warnings
-from quantumsim.operations.repetition_tree import RepeatedCircuitEvaluation
+from quantumsim.operations.repetition_tree import LazyTreeCircuitEvaluation
 import os
 import numpy as np
+from numpy.typing import NDArray
 from typing import List
+from tqdm import tqdm
 from quantumsim.circuits import Circuit
 from quantumsim import Setup
 from quantumsim.states.state import State
@@ -43,6 +45,7 @@ from qce_interp.interface_definitions.intrf_state_classification import (
 from qce_interp.visualization.plot_defect_rate import (
     plot_all_defect_rate,
 )
+from quantumsim.circuits.plotter import plot
 import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
@@ -311,24 +314,23 @@ def prep_initial_state_gates():
 #     model.idle_sq_gate(qubit_d2, t_start=t_ref),
 # ])
 
+qec_rounds: int = 10
+repetitions: int = 10000
+state_dim: int = 3
 
-initial_circuit = Circuit(qubits=qubits, gates=prep_initial_state_gates())
-circuit = Circuit(qubits=qubits, gates=distance_3_bitflip_gates())  # gates)  #
-finalized_circuit = model.finalize(circuit)
-finalized_circuit = finalized_circuit(angle=180)
-state = State(qubits, dim=3)  # initialization in ground state
-model.finalize(initial_circuit) @ state
-
-repetition_tree = RepeatedCircuitEvaluation(
+initial_circuit = model.finalize(Circuit(qubits=qubits, gates=prep_initial_state_gates()))
+qec_circuit = model.finalize(Circuit(qubits=qubits, gates=distance_3_bitflip_gates()))(angle=180)
+state = State(qubits, dim=state_dim)  # initialization in ground state
+initial_circuit @ state
+repetition_tree = LazyTreeCircuitEvaluation(
     initial_state=state,
-    circuit=finalized_circuit,
+    circuit=qec_circuit,
     state_projector=state_projector,
     final_state_projector=final_state_projector,
+    max_depth=qec_rounds,
 )
-qec_rounds: int = 7
-repetitions: int = 10000
 result_tensor = repetition_tree.evaluate_as_array(
-    depth=qec_rounds + 1,
+    depth=qec_rounds,
     repetitions=repetitions,
     verbose=True,
 )
@@ -351,16 +353,8 @@ print("Z1", error_identifier._classifier_lookup[QubitIDObj('Z1')].state_classifi
 print("D1", error_identifier._classifier_lookup[QubitIDObj('D1')].state_classification[:qec_rounds])
 print("X1", error_identifier._classifier_lookup[QubitIDObj('X1')].state_classification[:qec_rounds])
 print("D2", error_identifier._classifier_lookup[QubitIDObj('D2')].state_classification[:qec_rounds])
-print(np.unique(error_identifier.get_binary_stabilizer_classification(cycle_stabilizer_count=qec_rounds)))
 fig, ax = plot_all_defect_rate(
     error_identifier=error_identifier,
     included_rounds=qec_rounds,
 )
-# ax.set_ylim(-1, +1)
 plt.show()
-
-# finalized_circuit @ state
-#
-# print(state_projector.output_state_vector)
-# outcome_vector = state_projector.construct_output_vector(state=state)
-# print(outcome_vector)

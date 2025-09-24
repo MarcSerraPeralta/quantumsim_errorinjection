@@ -65,7 +65,7 @@ class StateProjector:
             1: model.measure_project_1,
             2: model.measure_project_2,
         }
-        self._meas_outcome_to_circuit: Dict[IStateKey, FinalizedCircuit] = {}
+        self.meas_outcome_to_circuit: Dict[IStateKey, FinalizedCircuit] = {}
         for meas_outcome, meas_outcome_key in zip(self._cartesian_product_array, self._cartesian_product_array_keys):
             _gates = []
             for qubit_id in self._ordered_qubit_ids:
@@ -75,22 +75,22 @@ class StateProjector:
                 else:
                     _gates.append(model.idle_meas_gate(qubit_id, t_start=0))
 
-            self._meas_outcome_to_circuit[meas_outcome_key] = model.finalize(Circuit(
+            self.meas_outcome_to_circuit[meas_outcome_key] = model.finalize(Circuit(
                 qubits=self._ordered_qubit_ids,
                 gates=_gates,
             ))
     # endregion
 
     # region Class Methods
+    # TODO: Also store finalized meas circuit with all output probabilities to prevent re-calculation.
+    # TODO: For final (Data) qubit measurement, just take diagonal of density matrix as proxi for probability.
     def construct_output_vector(self, state: State) -> NDArray[np.float32]:
         """:return: Probability vector for each product state measured."""
-        # TODO: Also store finalized meas circuit with all output probabilities to prevent re-calculation.
         result: NDArray[np.float32] = np.empty(shape=(len(self.output_state_vector)), dtype=np.float32)
-        # TODO: For final (Data) qubit measurement, just take diagonal of density matrix as proxi for probability.
 
         for i, meas_outcome_key in enumerate(self._cartesian_product_array_keys):  # '00', '01', '02', '10', ...
             output_state = state.copy()
-            finalized_meas_circuit = self._meas_outcome_to_circuit[meas_outcome_key]  # Circuit containing only measure_project
+            finalized_meas_circuit = self.meas_outcome_to_circuit[meas_outcome_key]  # Circuit containing only measure_project
             finalized_meas_circuit @ output_state
             prob_out_state = output_state.trace()
             result[i] = prob_out_state  # Already normalized
@@ -99,7 +99,7 @@ class StateProjector:
     def trace_out(self, state: State, state_key: IStateKey) -> State:
         """:return: Traced-out Pauli state vector based on measured product state."""
         output_state = state.copy()
-        finalized_meas_circuit = self._meas_outcome_to_circuit[state_key]
+        finalized_meas_circuit = self.meas_outcome_to_circuit[state_key]
         finalized_meas_circuit @ output_state
         output_state.pauli_vector.renormalize()  # Renormalized Pauli vector
         return output_state

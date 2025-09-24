@@ -46,17 +46,21 @@ def fast_choice(p: np.ndarray, rng: np.random.Generator) -> int:
     return idx
 
 
-class RepeatedCircuitEvaluation:
+class LazyTreeCircuitEvaluation:
     """
     Behaviour class, exposing methods for repeated transformation of Pauli state vector under circuit evaluation.
     """
 
     # region Class Constructor
-    def __init__(self, initial_state: State, circuit: FinalizedCircuit, state_projector: StateProjector, final_state_projector: StateProjector):
+    def __init__(self, initial_state: State, circuit: FinalizedCircuit, state_projector: StateProjector, final_state_projector: StateProjector, max_depth: int):
         self._initial_state: State = initial_state
         self._circuit: FinalizedCircuit = circuit
         self._state_projector: StateProjector = state_projector
         self._final_state_projector: StateProjector = final_state_projector
+        self._max_depth: int = max_depth
+        # Initial circuit process step
+        self._circuit @ initial_state
+
         self.root = Node(
             depth=0,
             rho_pre=initial_state,
@@ -74,13 +78,8 @@ class RepeatedCircuitEvaluation:
         if state_key in parent.children:  # Cached
             return parent.children[state_key]
 
-        state_projector: StateProjector = self.get_state_projector_at_depth(
-            depth=parent.depth,
-            max_depth=max_depth,
-        )
-
         # Trace state according to measured state-key
-        rho_post: State = state_projector.trace_out(
+        rho_post: State = self.get_state_projector_at_depth(depth=parent.depth, max_depth=max_depth).trace_out(
             state=parent.rho_pre,
             state_key=state_key,
         )
@@ -90,10 +89,7 @@ class RepeatedCircuitEvaluation:
         child_node: Node = Node(
             depth=parent.depth + 1,
             rho_pre=rho_post,
-            p_state=self.get_state_projector_at_depth(
-                depth=parent.depth + 1,
-                max_depth=max_depth,
-            ).construct_output_vector(state=rho_post)
+            p_state=self.get_state_projector_at_depth(depth=parent.depth + 1, max_depth=max_depth).construct_output_vector(state=rho_post)
         )
         parent.children[state_key] = child_node
         return child_node
@@ -108,10 +104,7 @@ class RepeatedCircuitEvaluation:
 
         for i in range(depth):
             idx = fast_choice(node.p_state, rng)
-            state_key: IStateKey = self.get_state_projector_at_depth(
-                depth=i,
-                max_depth=depth
-            ).output_state_vector_keys[idx]
+            state_key: IStateKey = self.get_state_projector_at_depth(depth=i, max_depth=depth).output_state_vector_keys[idx]
             node = self.add_node(
                 parent=node,
                 state_key=state_key,
@@ -120,43 +113,48 @@ class RepeatedCircuitEvaluation:
             result[i] = idx
         return result
 
-    def evaluate(self, depth: int = 1, rng: Optional = None) -> List[IStateKey]:
+    def evaluate_as_index_array(self, depth: int = 1, repetitions: int = 1, rng: Optional = None, verbose: bool = False) -> NDArray[np.int8]:
         """:return: Array-like of 'evaluated' state outcomes."""
-        evaluate_as_index: NDArray[np.int8] = self._evaluate_as_index(
-            depth=depth,
-            rng=rng,
-        )
-        result: List[IStateKey] = [
-            self.get_state_projector_at_depth(
-                depth=i,
-                max_depth=depth,
-            ).output_state_vector_keys[idx]
-            for i, idx in enumerate(evaluate_as_index)
-        ]
+        result: NDArray[np.int8] = np.zeros(shape=(
+            repetitions,
+            depth,
+        ), dtype=np.int8)
+        for i in tqdm(range(repetitions), desc="Decision-tree cached repetitions", disable=not verbose):
+            result[i, :] = self._evaluate_as_index(
+                depth=depth,
+                rng=rng,
+            )
         return result
 
     def evaluate_as_array(self, depth: int = 1, repetitions: int = 1, rng: Optional = None, verbose: bool = False) -> NDArray[np.int8]:
         """:return: Array-like of 'evaluated' state outcomes."""
+        depth_plus_data = depth + 1
+        index_array: NDArray[np.int8] = self.evaluate_as_index_array(
+            depth=depth_plus_data,
+            repetitions=repetitions,
+            rng=rng,
+            verbose=verbose,
+        )
         result: NDArray[np.int8] = np.zeros(shape=(
             repetitions,
-            depth - 1,  # Skip 0 QEC round data
+            depth,
             len(self._final_state_projector.ordered_qubit_ids),
         ), dtype=np.int8)
-        for i in tqdm(range(repetitions), desc="Decision-tree cached repetitions", disable=not verbose):
-            evaluate_as_index: NDArray[np.int8] = self._evaluate_as_index(
-                depth=depth,
-                rng=rng,
-            )
-            # Add acquisitions for ancilla qubits
-            for j, qubit_id in enumerate(self._state_projector.ordered_qubit_ids):
-                acquisition_index: Optional[int] = self._state_projector.get_acquisition_index(qubit_id=qubit_id)
-                if acquisition_index is not None:
-                    result[i, :-1, j] = self._state_projector.output_state_vector[evaluate_as_index[1:-1]][:, acquisition_index]  # qec round 1 to N - 1
-            # Add acquisitions for final data and ancilla qubits
-            for j, qubit_id in enumerate(self._final_state_projector.ordered_qubit_ids):
-                acquisition_index: Optional[int] = self._final_state_projector.get_acquisition_index(qubit_id=qubit_id)
-                if acquisition_index is not None:
-                    result[i, -1:, j] = self._final_state_projector.output_state_vector[evaluate_as_index[-1:]][:, acquisition_index]
+        for i in range(repetitions):
+            for j in range(depth_plus_data):
+                meas_index: int = index_array[i, j]
+                at_max_depth: bool = j == depth_plus_data - 1
+                if not at_max_depth:
+                    for k, qubit_id in enumerate(self._state_projector.ordered_qubit_ids):
+                        acquisition_index: Optional[int] = self._state_projector.get_acquisition_index(qubit_id=qubit_id)
+                        if acquisition_index is not None:
+                            result[i, j, k] = self._state_projector.output_state_vector[meas_index][acquisition_index]  # qec round 1 to N - 1
+                else:
+                    if at_max_depth:
+                        for k, qubit_id in enumerate(self._final_state_projector.ordered_qubit_ids):
+                            acquisition_index: Optional[int] = self._final_state_projector.get_acquisition_index(qubit_id=qubit_id)
+                            if acquisition_index is not None:
+                                result[i, j-1, k] = self._final_state_projector.output_state_vector[meas_index][acquisition_index]  # qec round 1 to N - 1
 
         return result
     # endregion
