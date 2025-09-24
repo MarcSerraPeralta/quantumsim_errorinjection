@@ -229,6 +229,7 @@ def distance_3_bitflip_gates():
         model.idle_tq_gate(qubit_z1, t_start=t_ref),
         model.idle_tq_gate(qubit_d1, t_start=t_ref),
         model.cphase(qubit_d2, qubit_x1, t_start=t_ref),
+        model.zz_coupling_2q(qubit_d1, qubit_x1, t_start=t_ref),
     ])
     t_ref += t_tqg
     # X1-D1
@@ -237,6 +238,7 @@ def distance_3_bitflip_gates():
         model.idle_tq_gate(qubit_z1, t_start=t_ref),
         model.idle_tq_gate(qubit_d2, t_start=t_ref),
         model.cphase(qubit_d1, qubit_x1, t_start=t_ref),
+        model.zz_coupling_2q(qubit_d2, qubit_x1, t_start=t_ref),
     ])
     t_ref += t_tqg
     # Middle of Parities
@@ -254,6 +256,8 @@ def distance_3_bitflip_gates():
         model.idle_tq_gate(qubit_x1, t_start=t_ref),
         model.idle_tq_gate(qubit_d2, t_start=t_ref),
         model.cphase(qubit_d1, qubit_z1, t_start=t_ref),
+        model.zz_coupling_2q(qubit_z1, qubit_d4, t_start=t_ref),
+        model.zz_coupling_2q(qubit_d2, qubit_z1, t_start=t_ref),
     ])
     t_ref += t_tqg
     # Z1-D4
@@ -262,6 +266,8 @@ def distance_3_bitflip_gates():
         model.idle_tq_gate(qubit_x1, t_start=t_ref),
         model.idle_tq_gate(qubit_d2, t_start=t_ref),
         model.cphase(qubit_z1, qubit_d4, t_start=t_ref),
+        model.zz_coupling_2q(qubit_d1, qubit_z1, t_start=t_ref),
+        model.zz_coupling_2q(qubit_d2, qubit_z1, t_start=t_ref),
     ])
     t_ref += t_tqg
     # End of Parities
@@ -319,7 +325,7 @@ repetition_tree = RepeatedCircuitEvaluation(
     state_projector=state_projector,
     final_state_projector=final_state_projector,
 )
-qec_rounds: int = 10
+qec_rounds: int = 7
 repetitions: int = 10000
 result_tensor = repetition_tree.evaluate_as_array(
     depth=qec_rounds + 1,

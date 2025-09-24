@@ -86,6 +86,7 @@ class StateProjector:
         """:return: Probability vector for each product state measured."""
         # TODO: Also store finalized meas circuit with all output probabilities to prevent re-calculation.
         result: NDArray[np.float32] = np.empty(shape=(len(self.output_state_vector)), dtype=np.float32)
+        # TODO: For final (Data) qubit measurement, just take diagonal of density matrix as proxi for probability.
 
         for i, meas_outcome_key in enumerate(self._cartesian_product_array_keys):  # '00', '01', '02', '10', ...
             output_state = state.copy()
