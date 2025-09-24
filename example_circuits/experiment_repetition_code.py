@@ -303,17 +303,8 @@ def prep_initial_state_gates():
         model.idle_sq_gate(qubit_d2, t_start=0),
     ]
 
-# gates = []
-# t_ref: float = 0
-# # Start of Parities
-# gates.extend([
-#     model.idle_sq_gate(qubit_d4, t_start=t_ref),
-#     model.rotate_x_180(qubit_z1, t_start=t_ref),
-#     model.idle_sq_gate(qubit_d1, t_start=t_ref),
-#     model.rotate_x_180(qubit_x1, t_start=t_ref),
-#     model.idle_sq_gate(qubit_d2, t_start=t_ref),
-# ])
 
+# Ryzen 7 7800X3D (4.2 GHz); d=3, r=10, seed=10.000 => 3min
 qec_rounds: int = 10
 repetitions: int = 10000
 state_dim: int = 3

@@ -144,8 +144,9 @@ def prep_initial_state_gates():
     ]
 
 
+# Ryzen 7 7800X3D (4.2 GHz); d=3, r=10, seed=10.000 => 6min
 qec_rounds: int = 10
-repetitions: int = 100
+repetitions: int = 10000
 state_dim: int = 3
 
 
