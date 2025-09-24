@@ -87,9 +87,9 @@ class StateProjector:
         result: NDArray[np.float32] = np.empty(shape=(len(self.output_state_vector)), dtype=np.float32)
         prob_init_state = np.trace(state.pauli_vector.to_dm())
 
-        for i, meas_outcome_key in enumerate(self._cartesian_product_array_keys):
+        for i, meas_outcome_key in enumerate(self._cartesian_product_array_keys):  # '00', '01', '02', '10', ...
             output_state = state.copy()
-            finalized_meas_circuit = self._meas_outcome_to_circuit[meas_outcome_key]
+            finalized_meas_circuit = self._meas_outcome_to_circuit[meas_outcome_key]  # Circuit containing only measure_project
             finalized_meas_circuit @ output_state
             prob_out_state = np.trace(output_state.pauli_vector.to_dm())
             result[i] = np.real(prob_out_state / prob_init_state)

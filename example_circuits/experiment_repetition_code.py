@@ -111,9 +111,10 @@ def construct_error_identifier(
     depth: int,
     repetitions: int,
     code_layout: ISurfaceCodeLayer,
-    involved_data_qubit_ids: List[IQubitID],  # Ordered
-    involved_ancilla_qubit_ids: List[IQubitID],
+    involved_qubits_qubit_ids: List[IQubitID],  # Ordered
 ) -> ErrorDetectionIdentifier:
+    involved_data_qubit_ids: List[IQubitID] = [qubit_id for qubit_id in involved_qubits_qubit_ids if qubit_id in code_layout.data_qubit_ids]
+    involved_ancilla_qubit_ids: List[IQubitID] = [qubit_id for qubit_id in involved_qubits_qubit_ids if qubit_id in code_layout.ancilla_qubit_ids]
     expected_parity = initial_state_to_expected_parity(
         initial_state=InitialStateContainer.from_ordered_list(
             initial_states=[
@@ -128,22 +129,26 @@ def construct_error_identifier(
         stabilizer_active=True,
     )
 
+    classifier_lookup = {}
+    for i, qubit_id in enumerate(involved_qubits_qubit_ids):
+        state_classification = result_tensor[:, :, i].flatten()
+        state_classification[state_classification == 2] = 1  # Map 0, 1, 2 outcomes to 0, 1
+
+        classifier_lookup[qubit_id] = StateClassifierContainer(
+            state_classification=state_classification,
+            _expected_parity=ParityType.EVEN if qubit_id not in expected_parity else expected_parity[qubit_id],
+            _stabilizer_reset=False,
+        )
+
     return ErrorDetectionIdentifier(
-        classifier_lookup={
-            qubit_id: StateClassifierContainer(
-                state_classification=result_tensor[:, :, i].flatten(),
-                _expected_parity=ParityType.EVEN if qubit_id not in expected_parity else expected_parity[qubit_id],
-                _stabilizer_reset=False,
-            )
-            for i, qubit_id in enumerate(involved_data_qubit_ids + involved_ancilla_qubit_ids)
-        },
+        classifier_lookup=classifier_lookup,
         index_kernel=SimulatedRepetitionExperimentKernel(
             rounds=[depth],
             involved_data_qubit_ids=involved_data_qubit_ids,
             involved_ancilla_qubit_ids=involved_ancilla_qubit_ids,
             experiment_repetitions=repetitions,
         ),
-        involved_qubit_ids=involved_data_qubit_ids + involved_ancilla_qubit_ids,
+        involved_qubit_ids=involved_qubits_qubit_ids,
         device_layout=code_layout,
         qec_rounds=[depth],
         use_heralded_post_selection=False,
@@ -184,12 +189,21 @@ state_projector = StateProjector(
     },
     model=model,
 )
+# final_state_projector = StateProjector(
+#     ordered_qubit_ids=qubits,
+#     meas_qubit_ids=qubits,
+#     dim_per_qubit={
+#         qubit_id: 3
+#         for qubit_id in qubits
+#     },
+#     model=model,
+# )
 final_state_projector = StateProjector(
     ordered_qubit_ids=qubits,
-    meas_qubit_ids=qubits,
+    meas_qubit_ids=[qubit_d4, qubit_d1, qubit_d2],
     dim_per_qubit={
-        qubit_id: 2
-        for qubit_id in qubits
+        qubit_id: 3
+        for qubit_id in [qubit_d4, qubit_d1, qubit_d2]
     },
     model=model,
 )
@@ -262,16 +276,42 @@ def distance_3_bitflip_gates():
     # Refocusing operations
     gates.extend([
         model.rotate_x_180(qubit_d4, t_start=t_ref),
+        model.idle_sq_gate(qubit_z1, t_start=t_ref),
         model.rotate_x_180(qubit_d1, t_start=t_ref),
+        model.idle_sq_gate(qubit_x1, t_start=t_ref),
         model.rotate_x_180(qubit_d2, t_start=t_ref),
     ])
 
     return gates
 
-circuit = Circuit(qubits=qubits, gates=distance_3_bitflip_gates())
+
+def prep_initial_state_gates():
+    return [
+        model.idle_sq_gate(qubit_d4, t_start=0),
+        model.idle_sq_gate(qubit_z1, t_start=0),
+        model.rotate_x_180(qubit_d1, t_start=0),
+        model.idle_sq_gate(qubit_x1, t_start=0),
+        model.idle_sq_gate(qubit_d2, t_start=0),
+    ]
+
+# gates = []
+# t_ref: float = 0
+# # Start of Parities
+# gates.extend([
+#     model.idle_sq_gate(qubit_d4, t_start=t_ref),
+#     model.rotate_x_180(qubit_z1, t_start=t_ref),
+#     model.idle_sq_gate(qubit_d1, t_start=t_ref),
+#     model.rotate_x_180(qubit_x1, t_start=t_ref),
+#     model.idle_sq_gate(qubit_d2, t_start=t_ref),
+# ])
+
+
+initial_circuit = Circuit(qubits=qubits, gates=prep_initial_state_gates())
+circuit = Circuit(qubits=qubits, gates=distance_3_bitflip_gates())  # gates)  #
 finalized_circuit = model.finalize(circuit)
 finalized_circuit = finalized_circuit(angle=180)
 state = State(qubits, dim=3)  # initialization in ground state
+model.finalize(initial_circuit) @ state
 
 repetition_tree = RepeatedCircuitEvaluation(
     initial_state=state,
@@ -279,10 +319,10 @@ repetition_tree = RepeatedCircuitEvaluation(
     state_projector=state_projector,
     final_state_projector=final_state_projector,
 )
-qec_rounds: int = 10
-repetitions: int = 100
+qec_rounds: int = 7
+repetitions: int = 10000
 result_tensor = repetition_tree.evaluate_as_array(
-    depth=qec_rounds,
+    depth=qec_rounds + 1,
     repetitions=repetitions,
     verbose=True,
 )
@@ -292,21 +332,25 @@ error_identifier = construct_error_identifier(
     depth=qec_rounds,
     repetitions=repetitions,
     code_layout=RepetitionCodeDistance3(),
-    involved_data_qubit_ids=[
+    involved_qubits_qubit_ids=[
         QubitIDObj('D4'),
+        QubitIDObj('Z1'),
         QubitIDObj('D1'),
+        QubitIDObj('X1'),
         QubitIDObj('D2'),
     ],
-    involved_ancilla_qubit_ids=[
-        QubitIDObj('Z1'),
-        QubitIDObj('X1'),
-    ],
 )
-print(error_identifier)
-plot_all_defect_rate(
+print("D4", error_identifier._classifier_lookup[QubitIDObj('D4')].state_classification[:qec_rounds])
+print("Z1", error_identifier._classifier_lookup[QubitIDObj('Z1')].state_classification[:qec_rounds])
+print("D1", error_identifier._classifier_lookup[QubitIDObj('D1')].state_classification[:qec_rounds])
+print("X1", error_identifier._classifier_lookup[QubitIDObj('X1')].state_classification[:qec_rounds])
+print("D2", error_identifier._classifier_lookup[QubitIDObj('D2')].state_classification[:qec_rounds])
+print(np.unique(error_identifier.get_binary_stabilizer_classification(cycle_stabilizer_count=qec_rounds)))
+fig, ax = plot_all_defect_rate(
     error_identifier=error_identifier,
     included_rounds=qec_rounds,
 )
+# ax.set_ylim(-1, +1)
 plt.show()
 
 # finalized_circuit @ state

@@ -138,8 +138,8 @@ class RepeatedCircuitEvaluation:
         """:return: Array-like of 'evaluated' state outcomes."""
         result: NDArray[np.int8] = np.zeros(shape=(
             repetitions,
-            depth,
-            self._final_state_projector.nr_measured_qubits,
+            depth - 1,  # Skip 0 QEC round data
+            len(self._final_state_projector.ordered_qubit_ids),
         ), dtype=np.int8)
         for i in tqdm(range(repetitions), desc="Decision-tree cached repetitions", disable=not verbose):
             evaluate_as_index: NDArray[np.int8] = self._evaluate_as_index(
@@ -150,7 +150,7 @@ class RepeatedCircuitEvaluation:
             for j, qubit_id in enumerate(self._state_projector.ordered_qubit_ids):
                 acquisition_index: Optional[int] = self._state_projector.get_acquisition_index(qubit_id=qubit_id)
                 if acquisition_index is not None:
-                    result[i, :-1, j] = self._state_projector.output_state_vector[evaluate_as_index[:-1]][:, acquisition_index]
+                    result[i, :-1, j] = self._state_projector.output_state_vector[evaluate_as_index[1:-1]][:, acquisition_index]  # qec round 1 to N - 1
             # Add acquisitions for final data and ancilla qubits
             for j, qubit_id in enumerate(self._final_state_projector.ordered_qubit_ids):
                 acquisition_index: Optional[int] = self._final_state_projector.get_acquisition_index(qubit_id=qubit_id)
