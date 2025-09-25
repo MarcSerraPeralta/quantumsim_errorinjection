@@ -197,42 +197,32 @@ noise_file = "setup_noisy.yaml"
 # noise_file = "setup_conditional_oscillation.yaml"
 # noise_file = "setup_perfect.yaml"
 
-qubit_d4 = "D4"
-qubit_z1 = "Z1"
-qubit_d1 = "D1"
-qubit_x1 = "X1"
-qubit_d2 = "D2"
-qubits = [qubit_d4, qubit_z1, qubit_d1, qubit_x1, qubit_d2]
+DISTANCE = 3
 
 PLOT_CIRCUITS = True
 
 ###################
+
+if DISTANCE == 3:
+    qubits = ["D4", "Z1", "D1", "X1", "D2"]
+elif DISTANCE == 5:
+    qubits = ["D7", "Z3", "D4", "Z1", "D1", "X1", "D2", "X2", "D3"]
+else:
+    raise ValueError(f"Distance {DISTANCE} not implemented.")
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 setup = Setup.from_file(os.path.join(current_dir, "..", noise_file))
 model = DiCarloLabModel(setup=setup)
 state_projector = StateProjector(
     ordered_qubit_ids=qubits,
-    meas_qubit_ids=[qubit_z1, qubit_x1],
-    dim_per_qubit={
-        qubit_z1: 3,
-        qubit_x1: 3,
-    },
+    meas_qubit_ids=qubits[1::2],
+    dim_per_qubit={anc: 3 for anc in qubits[1::2]},
     model=model,
 )
-# final_state_projector = StateProjector(
-#     ordered_qubit_ids=qubits,
-#     meas_qubit_ids=qubits,
-#     dim_per_qubit={
-#         qubit_id: 3
-#         for qubit_id in qubits
-#     },
-#     model=model,
-# )
 final_state_projector = StateProjector(
     ordered_qubit_ids=qubits,
-    meas_qubit_ids=[qubit_d4, qubit_d1, qubit_d2],
-    dim_per_qubit={qubit_id: 3 for qubit_id in [qubit_d4, qubit_d1, qubit_d2]},
+    meas_qubit_ids=qubits[::2],
+    dim_per_qubit={data: 3 for data in qubits[::2]},
     model=model,
 )
 t_sqg: float = 20
@@ -245,115 +235,119 @@ def distance_3_bitflip_gates():
     # Start of Parities
     gates.extend(
         [
-            model.idle_sq_gate(qubit_d4, t_start=t_ref),
-            model.idle_sq_gate(qubit_z1, t_start=t_ref),
-            model.idle_sq_gate(qubit_d1, t_start=t_ref),
-            model.rotate_y_90(qubit_x1, t_start=t_ref),
-            model.idle_sq_gate(qubit_d2, t_start=t_ref),
+            model.idle_sq_gate("D4", t_start=t_ref),
+            model.idle_sq_gate("Z1", t_start=t_ref),
+            model.idle_sq_gate("D1", t_start=t_ref),
+            model.rotate_y_90("X1", t_start=t_ref),
+            model.idle_sq_gate("D2", t_start=t_ref),
         ]
     )
     t_ref += t_sqg
     # X1-D2
     gates.extend(
         [
-            model.idle_tq_gate(qubit_d4, t_start=t_ref),
-            model.idle_tq_gate(qubit_z1, t_start=t_ref),
-            model.idle_tq_gate(qubit_d1, t_start=t_ref),
-            model.cphase(qubit_d2, qubit_x1, t_start=t_ref),
-            model.zz_coupling_2q(qubit_d1, qubit_x1, t_start=t_ref),
+            model.idle_tq_gate("D4", t_start=t_ref),
+            model.idle_tq_gate("Z1", t_start=t_ref),
+            model.idle_tq_gate("D1", t_start=t_ref),
+            model.cphase("D2", "X1", t_start=t_ref),
+            model.zz_coupling_2q("D1", "X1", t_start=t_ref),
         ]
     )
     t_ref += t_tqg
     # X1-D1
     gates.extend(
         [
-            model.idle_tq_gate(qubit_d4, t_start=t_ref),
-            model.idle_tq_gate(qubit_z1, t_start=t_ref),
-            model.idle_tq_gate(qubit_d2, t_start=t_ref),
-            model.cphase(qubit_d1, qubit_x1, t_start=t_ref),
-            model.zz_coupling_2q(qubit_d2, qubit_x1, t_start=t_ref),
+            model.idle_tq_gate("D4", t_start=t_ref),
+            model.idle_tq_gate("Z1", t_start=t_ref),
+            model.idle_tq_gate("D2", t_start=t_ref),
+            model.cphase("D1", "X1", t_start=t_ref),
+            model.zz_coupling_2q("D2", "X1", t_start=t_ref),
         ]
     )
     t_ref += t_tqg
     # Middle of Parities
     gates.extend(
         [
-            model.idle_sq_gate(qubit_d4, t_start=t_ref),
-            model.rotate_y_90(qubit_z1, t_start=t_ref),
-            model.idle_sq_gate(qubit_d1, t_start=t_ref),
-            model.rotate_y_m90(qubit_x1, t_start=t_ref),
-            model.idle_sq_gate(qubit_d2, t_start=t_ref),
+            model.idle_sq_gate("D4", t_start=t_ref),
+            model.rotate_y_90("Z1", t_start=t_ref),
+            model.idle_sq_gate("D1", t_start=t_ref),
+            model.rotate_y_m90("X1", t_start=t_ref),
+            model.idle_sq_gate("D2", t_start=t_ref),
         ]
     )
     t_ref += t_sqg
     # Z1-D1
     gates.extend(
         [
-            model.idle_tq_gate(qubit_d4, t_start=t_ref),
-            model.idle_tq_gate(qubit_x1, t_start=t_ref),
-            model.idle_tq_gate(qubit_d2, t_start=t_ref),
-            model.cphase(qubit_d1, qubit_z1, t_start=t_ref),
-            model.zz_coupling_2q(qubit_z1, qubit_d4, t_start=t_ref),
-            model.zz_coupling_2q(qubit_d2, qubit_z1, t_start=t_ref),
+            model.idle_tq_gate("D4", t_start=t_ref),
+            model.idle_tq_gate("X1", t_start=t_ref),
+            model.idle_tq_gate("D2", t_start=t_ref),
+            model.cphase("D1", "Z1", t_start=t_ref),
+            model.zz_coupling_2q("Z1", "D4", t_start=t_ref),
+            model.zz_coupling_2q("D2", "Z1", t_start=t_ref),
         ]
     )
     t_ref += t_tqg
     # Z1-D4
     gates.extend(
         [
-            model.idle_tq_gate(qubit_d1, t_start=t_ref),
-            model.idle_tq_gate(qubit_x1, t_start=t_ref),
-            model.idle_tq_gate(qubit_d2, t_start=t_ref),
-            model.cphase(qubit_z1, qubit_d4, t_start=t_ref),
-            model.zz_coupling_2q(qubit_d1, qubit_z1, t_start=t_ref),
-            model.zz_coupling_2q(qubit_d2, qubit_z1, t_start=t_ref),
+            model.idle_tq_gate("D1", t_start=t_ref),
+            model.idle_tq_gate("X1", t_start=t_ref),
+            model.idle_tq_gate("D2", t_start=t_ref),
+            model.cphase("Z1", "D4", t_start=t_ref),
+            model.zz_coupling_2q("D1", "Z1", t_start=t_ref),
+            model.zz_coupling_2q("D2", "Z1", t_start=t_ref),
         ]
     )
     t_ref += t_tqg
     # End of Parities
     gates.extend(
         [
-            model.idle_sq_gate(qubit_d4, t_start=t_ref),
-            model.rotate_y_m90(qubit_z1, t_start=t_ref),
-            model.idle_sq_gate(qubit_d1, t_start=t_ref),
-            model.idle_sq_gate(qubit_x1, t_start=t_ref),
-            model.idle_sq_gate(qubit_d2, t_start=t_ref),
+            model.idle_sq_gate("D4", t_start=t_ref),
+            model.rotate_y_m90("Z1", t_start=t_ref),
+            model.idle_sq_gate("D1", t_start=t_ref),
+            model.idle_sq_gate("X1", t_start=t_ref),
+            model.idle_sq_gate("D2", t_start=t_ref),
         ]
     )
     t_ref += t_sqg
     # Refocusing operations
     gates.extend(
         [
-            model.rotate_x_180(qubit_d4, t_start=t_ref),
-            model.idle_sq_gate(qubit_z1, t_start=t_ref),
-            model.rotate_x_180(qubit_d1, t_start=t_ref),
-            model.idle_sq_gate(qubit_x1, t_start=t_ref),
-            model.rotate_x_180(qubit_d2, t_start=t_ref),
+            model.rotate_x_180("D4", t_start=t_ref),
+            model.idle_sq_gate("Z1", t_start=t_ref),
+            model.rotate_x_180("D1", t_start=t_ref),
+            model.idle_sq_gate("X1", t_start=t_ref),
+            model.rotate_x_180("D2", t_start=t_ref),
         ]
     )
 
     return gates
 
 
-def prep_initial_state_gates():
+def distance_3_prep_initial_state_gates():
     return [
-        model.idle_sq_gate(qubit_d4, t_start=0),
-        model.idle_sq_gate(qubit_z1, t_start=0),
-        model.rotate_x_180(qubit_d1, t_start=0),
-        model.idle_sq_gate(qubit_x1, t_start=0),
-        model.idle_sq_gate(qubit_d2, t_start=0),
+        model.idle_sq_gate("D4", t_start=0),
+        model.idle_sq_gate("Z1", t_start=0),
+        model.rotate_x_180("D1", t_start=0),
+        model.idle_sq_gate("X1", t_start=0),
+        model.idle_sq_gate("D2", t_start=0),
     ]
 
 
 # Ryzen 7 7800X3D (4.2 GHz); d=3, r=10, seed=10.000 => 3min
 qec_rounds: int = 10
-repetitions: int = 10000
+repetitions: int = 10_000
 state_dim: int = 3
 
-initial_circuit = model.finalize(
-    Circuit(qubits=qubits, gates=prep_initial_state_gates())
-)
-qec_circuit = model.finalize(Circuit(qubits=qubits, gates=distance_3_bitflip_gates()))
+if DISTANCE == 3:
+    init_gates = distance_3_prep_initial_state_gates()
+    qec_gates = distance_3_bitflip_gates()
+else:
+    raise ValueError(f"Distance {DISTANCE} not implemented.")
+
+initial_circuit = model.finalize(Circuit(qubits=qubits, gates=init_gates))
+qec_circuit = model.finalize(Circuit(qubits=qubits, gates=qec_gates))
 state = State(qubits, dim=state_dim)  # initialization in ground state
 initial_circuit @ state
 repetition_tree = LazyTreeCircuitEvaluation(
@@ -369,49 +363,27 @@ result_tensor = repetition_tree.evaluate_as_array(
     verbose=True,
 )
 
+if DISTANCE == 3:
+    code_layout = RepetitionCodeDistance3()
+else:
+    raise ValueError(f"Distance {DISTANCE} not implemented.")
+
 error_identifier = construct_error_identifier(
     result_tensor=result_tensor,
     depth=qec_rounds,
     repetitions=repetitions,
-    code_layout=RepetitionCodeDistance3(),
-    involved_qubits_qubit_ids=[
-        QubitIDObj("D4"),
-        QubitIDObj("Z1"),
-        QubitIDObj("D1"),
-        QubitIDObj("X1"),
-        QubitIDObj("D2"),
-    ],
+    code_layout=code_layout,
+    involved_qubits_qubit_ids=[QubitIDObj(q) for q in qubits],
 )
-print(
-    "D4",
-    error_identifier._classifier_lookup[QubitIDObj("D4")].state_classification[
-        :qec_rounds
-    ],
-)
-print(
-    "Z1",
-    error_identifier._classifier_lookup[QubitIDObj("Z1")].state_classification[
-        :qec_rounds
-    ],
-)
-print(
-    "D1",
-    error_identifier._classifier_lookup[QubitIDObj("D1")].state_classification[
-        :qec_rounds
-    ],
-)
-print(
-    "X1",
-    error_identifier._classifier_lookup[QubitIDObj("X1")].state_classification[
-        :qec_rounds
-    ],
-)
-print(
-    "D2",
-    error_identifier._classifier_lookup[QubitIDObj("D2")].state_classification[
-        :qec_rounds
-    ],
-)
+
+for qubit in qubits:
+    print(
+        qubit,
+        error_identifier._classifier_lookup[QubitIDObj(qubit)].state_classification[
+            :qec_rounds
+        ],
+    )
+
 fig, ax = plot_all_defect_rate(
     error_identifier=error_identifier,
     included_rounds=qec_rounds,
