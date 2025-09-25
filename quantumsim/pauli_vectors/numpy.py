@@ -125,4 +125,4 @@ class PauliVectorNumpy(PauliVectorBase):
         return tr
 
     def copy(self):
-        return self.from_pv(self.to_pv().copy(), self.bases)
+        return self.from_pv(self.to_pv().copy(), self.bases, force=True)
