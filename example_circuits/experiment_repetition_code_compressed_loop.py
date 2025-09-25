@@ -44,10 +44,7 @@ state_projector = StateProjector(
 final_state_projector = StateProjector(
     ordered_qubit_ids=qubits,
     meas_qubit_ids=[qubit_d4, qubit_d1, qubit_d2],
-    dim_per_qubit={
-        qubit_id: 3
-        for qubit_id in [qubit_d4, qubit_d1, qubit_d2]
-    },
+    dim_per_qubit={qubit_id: 3 for qubit_id in [qubit_d4, qubit_d1, qubit_d2]},
     model=model,
 )
 t_sqg: float = 20
@@ -58,78 +55,94 @@ def distance_3_bitflip_gates():
     gates = []
     t_ref: float = 0
     # Start of Parities
-    gates.extend([
-        model.idle_sq_gate(qubit_d4, t_start=t_ref),
-        model.idle_sq_gate(qubit_z1, t_start=t_ref),
-        model.idle_sq_gate(qubit_d1, t_start=t_ref),
-        model.rotate_y_90(qubit_x1, t_start=t_ref),
-        model.idle_sq_gate(qubit_d2, t_start=t_ref),
-    ])
+    gates.extend(
+        [
+            model.idle_sq_gate(qubit_d4, t_start=t_ref),
+            model.idle_sq_gate(qubit_z1, t_start=t_ref),
+            model.idle_sq_gate(qubit_d1, t_start=t_ref),
+            model.rotate_y_90(qubit_x1, t_start=t_ref),
+            model.idle_sq_gate(qubit_d2, t_start=t_ref),
+        ]
+    )
     t_ref += t_sqg
     # X1-D2
-    gates.extend([
-        model.idle_tq_gate(qubit_d4, t_start=t_ref),
-        model.idle_tq_gate(qubit_z1, t_start=t_ref),
-        model.idle_tq_gate(qubit_d1, t_start=t_ref),
-        model.cphase(qubit_d2, qubit_x1, t_start=t_ref),
-        model.zz_coupling_2q(qubit_d1, qubit_x1, t_start=t_ref),
-    ])
+    gates.extend(
+        [
+            model.idle_tq_gate(qubit_d4, t_start=t_ref),
+            model.idle_tq_gate(qubit_z1, t_start=t_ref),
+            model.idle_tq_gate(qubit_d1, t_start=t_ref),
+            model.cphase(qubit_d2, qubit_x1, t_start=t_ref),
+            model.zz_coupling_2q(qubit_d1, qubit_x1, t_start=t_ref),
+        ]
+    )
     t_ref += t_tqg
     # X1-D1
-    gates.extend([
-        model.idle_tq_gate(qubit_d4, t_start=t_ref),
-        model.idle_tq_gate(qubit_z1, t_start=t_ref),
-        model.idle_tq_gate(qubit_d2, t_start=t_ref),
-        model.cphase(qubit_d1, qubit_x1, t_start=t_ref),
-        model.zz_coupling_2q(qubit_d2, qubit_x1, t_start=t_ref),
-    ])
+    gates.extend(
+        [
+            model.idle_tq_gate(qubit_d4, t_start=t_ref),
+            model.idle_tq_gate(qubit_z1, t_start=t_ref),
+            model.idle_tq_gate(qubit_d2, t_start=t_ref),
+            model.cphase(qubit_d1, qubit_x1, t_start=t_ref),
+            model.zz_coupling_2q(qubit_d2, qubit_x1, t_start=t_ref),
+        ]
+    )
     t_ref += t_tqg
     # Middle of Parities
-    gates.extend([
-        model.idle_sq_gate(qubit_d4, t_start=t_ref),
-        model.rotate_y_90(qubit_z1, t_start=t_ref),
-        model.idle_sq_gate(qubit_d1, t_start=t_ref),
-        model.rotate_y_m90(qubit_x1, t_start=t_ref),
-        model.idle_sq_gate(qubit_d2, t_start=t_ref),
-    ])
+    gates.extend(
+        [
+            model.idle_sq_gate(qubit_d4, t_start=t_ref),
+            model.rotate_y_90(qubit_z1, t_start=t_ref),
+            model.idle_sq_gate(qubit_d1, t_start=t_ref),
+            model.rotate_y_m90(qubit_x1, t_start=t_ref),
+            model.idle_sq_gate(qubit_d2, t_start=t_ref),
+        ]
+    )
     t_ref += t_sqg
     # Z1-D1
-    gates.extend([
-        model.idle_tq_gate(qubit_d4, t_start=t_ref),
-        model.idle_tq_gate(qubit_x1, t_start=t_ref),
-        model.idle_tq_gate(qubit_d2, t_start=t_ref),
-        model.cphase(qubit_d1, qubit_z1, t_start=t_ref),
-        model.zz_coupling_2q(qubit_z1, qubit_d4, t_start=t_ref),
-        model.zz_coupling_2q(qubit_d2, qubit_z1, t_start=t_ref),
-    ])
+    gates.extend(
+        [
+            model.idle_tq_gate(qubit_d4, t_start=t_ref),
+            model.idle_tq_gate(qubit_x1, t_start=t_ref),
+            model.idle_tq_gate(qubit_d2, t_start=t_ref),
+            model.cphase(qubit_d1, qubit_z1, t_start=t_ref),
+            model.zz_coupling_2q(qubit_z1, qubit_d4, t_start=t_ref),
+            model.zz_coupling_2q(qubit_d2, qubit_z1, t_start=t_ref),
+        ]
+    )
     t_ref += t_tqg
     # Z1-D4
-    gates.extend([
-        model.idle_tq_gate(qubit_d1, t_start=t_ref),
-        model.idle_tq_gate(qubit_x1, t_start=t_ref),
-        model.idle_tq_gate(qubit_d2, t_start=t_ref),
-        model.cphase(qubit_z1, qubit_d4, t_start=t_ref),
-        model.zz_coupling_2q(qubit_d1, qubit_z1, t_start=t_ref),
-        model.zz_coupling_2q(qubit_d2, qubit_z1, t_start=t_ref),
-    ])
+    gates.extend(
+        [
+            model.idle_tq_gate(qubit_d1, t_start=t_ref),
+            model.idle_tq_gate(qubit_x1, t_start=t_ref),
+            model.idle_tq_gate(qubit_d2, t_start=t_ref),
+            model.cphase(qubit_z1, qubit_d4, t_start=t_ref),
+            model.zz_coupling_2q(qubit_d1, qubit_z1, t_start=t_ref),
+            model.zz_coupling_2q(qubit_d2, qubit_z1, t_start=t_ref),
+        ]
+    )
     t_ref += t_tqg
     # End of Parities
-    gates.extend([
-        model.idle_sq_gate(qubit_d4, t_start=t_ref),
-        model.rotate_y_m90(qubit_z1, t_start=t_ref),
-        model.idle_sq_gate(qubit_d1, t_start=t_ref),
-        model.idle_sq_gate(qubit_x1, t_start=t_ref),
-        model.idle_sq_gate(qubit_d2, t_start=t_ref),
-    ])
+    gates.extend(
+        [
+            model.idle_sq_gate(qubit_d4, t_start=t_ref),
+            model.rotate_y_m90(qubit_z1, t_start=t_ref),
+            model.idle_sq_gate(qubit_d1, t_start=t_ref),
+            model.idle_sq_gate(qubit_x1, t_start=t_ref),
+            model.idle_sq_gate(qubit_d2, t_start=t_ref),
+        ]
+    )
     t_ref += t_sqg
     # Refocusing operations
-    gates.extend([
-        model.rotate_x_180(qubit_d4, t_start=t_ref),
-        model.idle_sq_gate(qubit_z1, t_start=t_ref),
-        model.rotate_x_180(qubit_d1, t_start=t_ref),
-        model.idle_sq_gate(qubit_x1, t_start=t_ref),
-        model.rotate_x_180(qubit_d2, t_start=t_ref),
-    ])
+    gates.extend(
+        [
+            model.rotate_x_180(qubit_d4, t_start=t_ref),
+            model.idle_sq_gate(qubit_z1, t_start=t_ref),
+            model.rotate_x_180(qubit_d1, t_start=t_ref),
+            model.idle_sq_gate(qubit_x1, t_start=t_ref),
+            model.rotate_x_180(qubit_d2, t_start=t_ref),
+        ]
+    )
 
     return gates
 
@@ -151,13 +164,20 @@ state_dim: int = 3
 
 
 random_array = np.random.rand(repetitions, qec_rounds)
-meas_outcome_index: NDArray[int] = np.zeros(shape=(
-    repetitions,
-    qec_rounds,
-), dtype=int)
+meas_outcome_index: NDArray[int] = np.zeros(
+    shape=(
+        repetitions,
+        qec_rounds,
+    ),
+    dtype=int,
+)
 # Construct coherent qec-circuit
-initial_circuit = model.finalize(Circuit(qubits=qubits, gates=prep_initial_state_gates()))
-qec_circuit = model.finalize(Circuit(qubits=qubits, gates=distance_3_bitflip_gates()))(angle=180)
+initial_circuit = model.finalize(
+    Circuit(qubits=qubits, gates=prep_initial_state_gates())
+)
+qec_circuit = model.finalize(Circuit(qubits=qubits, gates=distance_3_bitflip_gates()))(
+    angle=180
+)
 # Populate measurement outcome indices
 state: State = State(qubits, dim=state_dim)  # initialization in ground state
 initial_circuit @ state
@@ -170,7 +190,9 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
         # Execute ancilla readout every qec-round
         for k, meas_outcome_key in enumerate(state_projector.output_state_vector_keys):
             trial_state: State = case_state.copy()
-            meas_project_circuit = state_projector.meas_outcome_to_circuit[meas_outcome_key]
+            meas_project_circuit = state_projector.meas_outcome_to_circuit[
+                meas_outcome_key
+            ]
             meas_project_circuit @ trial_state
             trial_probability_state: float = trial_state.trace()
             # Process probability spike
