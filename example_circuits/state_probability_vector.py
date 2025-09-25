@@ -47,7 +47,7 @@ circuit = Circuit(
     qubits=[qubit],
     gates=[
         model.rotate_x90(qubit, t_start=0),
-        model.measure_project_1(qubit, t_start=20)
+        model.measure_project_1(qubit, t_start=20),
     ],
 )
 finalized_circuit: FinalizedCircuit = model.finalize(circuit)

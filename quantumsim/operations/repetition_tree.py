@@ -42,7 +42,7 @@ def fast_choice(p: np.ndarray, rng: np.random.Generator) -> int:
     """
     cumulative_p = np.cumsum(p)
     random_number = rng.random()
-    idx = np.searchsorted(cumulative_p, random_number, side='right')
+    idx = np.searchsorted(cumulative_p, random_number, side="right")
     return idx
 
 
@@ -52,7 +52,14 @@ class LazyTreeCircuitEvaluation:
     """
 
     # region Class Constructor
-    def __init__(self, initial_state: State, circuit: FinalizedCircuit, state_projector: StateProjector, final_state_projector: StateProjector, max_depth: int):
+    def __init__(
+        self,
+        initial_state: State,
+        circuit: FinalizedCircuit,
+        state_projector: StateProjector,
+        final_state_projector: StateProjector,
+        max_depth: int,
+    ):
         self._initial_state: State = initial_state
         self._circuit: FinalizedCircuit = circuit
         self._state_projector: StateProjector = state_projector
@@ -64,14 +71,21 @@ class LazyTreeCircuitEvaluation:
         self.root = Node(
             depth=0,
             rho_pre=initial_state,
-            p_state=state_projector.construct_output_vector(state=initial_state)
+            p_state=state_projector.construct_output_vector(state=initial_state),
         )
+
     # endregion
 
     # region Class Methods
-    def get_state_projector_at_depth(self, depth: int, max_depth: int) -> StateProjector:
+    def get_state_projector_at_depth(
+        self, depth: int, max_depth: int
+    ) -> StateProjector:
         """Return the correct measurement channel for a given depth."""
-        return self._state_projector if depth < max_depth - 1 else self._final_state_projector
+        return (
+            self._state_projector
+            if depth < max_depth - 1
+            else self._final_state_projector
+        )
 
     def add_node(self, parent: Node, state_key: IStateKey, max_depth: int) -> Node:
         """:return: Node after extending parent evaluation."""
@@ -79,7 +93,9 @@ class LazyTreeCircuitEvaluation:
             return parent.children[state_key]
 
         # Trace state according to measured state-key
-        rho_post: State = self.get_state_projector_at_depth(depth=parent.depth, max_depth=max_depth).trace_out(
+        rho_post: State = self.get_state_projector_at_depth(
+            depth=parent.depth, max_depth=max_depth
+        ).trace_out(
             state=parent.rho_pre,
             state_key=state_key,
         )
@@ -89,12 +105,16 @@ class LazyTreeCircuitEvaluation:
         child_node: Node = Node(
             depth=parent.depth + 1,
             rho_pre=rho_post,
-            p_state=self.get_state_projector_at_depth(depth=parent.depth + 1, max_depth=max_depth).construct_output_vector(state=rho_post)
+            p_state=self.get_state_projector_at_depth(
+                depth=parent.depth + 1, max_depth=max_depth
+            ).construct_output_vector(state=rho_post),
         )
         parent.children[state_key] = child_node
         return child_node
 
-    def _evaluate_as_index(self, depth: int = 1, rng: Optional = None) -> NDArray[np.int8]:
+    def _evaluate_as_index(
+        self, depth: int = 1, rng: Optional = None
+    ) -> NDArray[np.int8]:
         """:return: Array-like of 'evaluated' state outcomes."""
         if rng is None:
             rng = np.random.default_rng()
@@ -104,7 +124,9 @@ class LazyTreeCircuitEvaluation:
 
         for i in range(depth):
             idx = fast_choice(node.p_state, rng)
-            state_key: IStateKey = self.get_state_projector_at_depth(depth=i, max_depth=depth).output_state_vector_keys[idx]
+            state_key: IStateKey = self.get_state_projector_at_depth(
+                depth=i, max_depth=depth
+            ).output_state_vector_keys[idx]
             node = self.add_node(
                 parent=node,
                 state_key=state_key,
@@ -113,20 +135,39 @@ class LazyTreeCircuitEvaluation:
             result[i] = idx
         return result
 
-    def evaluate_as_index_array(self, depth: int = 1, repetitions: int = 1, rng: Optional = None, verbose: bool = False) -> NDArray[np.int8]:
+    def evaluate_as_index_array(
+        self,
+        depth: int = 1,
+        repetitions: int = 1,
+        rng: Optional = None,
+        verbose: bool = False,
+    ) -> NDArray[np.int8]:
         """:return: Array-like of 'evaluated' state outcomes."""
-        result: NDArray[np.int8] = np.zeros(shape=(
-            repetitions,
-            depth,
-        ), dtype=np.int8)
-        for i in tqdm(range(repetitions), desc="Decision-tree cached repetitions", disable=not verbose):
+        result: NDArray[np.int8] = np.zeros(
+            shape=(
+                repetitions,
+                depth,
+            ),
+            dtype=np.int8,
+        )
+        for i in tqdm(
+            range(repetitions),
+            desc="Decision-tree cached repetitions",
+            disable=not verbose,
+        ):
             result[i, :] = self._evaluate_as_index(
                 depth=depth,
                 rng=rng,
             )
         return result
 
-    def evaluate_as_array(self, depth: int = 1, repetitions: int = 1, rng: Optional = None, verbose: bool = False) -> NDArray[np.int8]:
+    def evaluate_as_array(
+        self,
+        depth: int = 1,
+        repetitions: int = 1,
+        rng: Optional = None,
+        verbose: bool = False,
+    ) -> NDArray[np.int8]:
         """:return: Array-like of 'evaluated' state outcomes."""
         depth_plus_data = depth + 1
         index_array: NDArray[np.int8] = self.evaluate_as_index_array(
@@ -135,26 +176,52 @@ class LazyTreeCircuitEvaluation:
             rng=rng,
             verbose=verbose,
         )
-        result: NDArray[np.int8] = np.zeros(shape=(
-            repetitions,
-            depth,
-            len(self._final_state_projector.ordered_qubit_ids),
-        ), dtype=np.int8)
+        result: NDArray[np.int8] = np.zeros(
+            shape=(
+                repetitions,
+                depth,
+                len(self._final_state_projector.ordered_qubit_ids),
+            ),
+            dtype=np.int8,
+        )
         for i in range(repetitions):
             for j in range(depth_plus_data):
                 meas_index: int = index_array[i, j]
                 at_max_depth: bool = j == depth_plus_data - 1
                 if not at_max_depth:
-                    for k, qubit_id in enumerate(self._state_projector.ordered_qubit_ids):
-                        acquisition_index: Optional[int] = self._state_projector.get_acquisition_index(qubit_id=qubit_id)
+                    for k, qubit_id in enumerate(
+                        self._state_projector.ordered_qubit_ids
+                    ):
+                        acquisition_index: Optional[int] = (
+                            self._state_projector.get_acquisition_index(
+                                qubit_id=qubit_id
+                            )
+                        )
                         if acquisition_index is not None:
-                            result[i, j, k] = self._state_projector.output_state_vector[meas_index][acquisition_index]  # qec round 1 to N - 1
+                            result[i, j, k] = self._state_projector.output_state_vector[
+                                meas_index
+                            ][
+                                acquisition_index
+                            ]  # qec round 1 to N - 1
                 else:
                     if at_max_depth:
-                        for k, qubit_id in enumerate(self._final_state_projector.ordered_qubit_ids):
-                            acquisition_index: Optional[int] = self._final_state_projector.get_acquisition_index(qubit_id=qubit_id)
+                        for k, qubit_id in enumerate(
+                            self._final_state_projector.ordered_qubit_ids
+                        ):
+                            acquisition_index: Optional[int] = (
+                                self._final_state_projector.get_acquisition_index(
+                                    qubit_id=qubit_id
+                                )
+                            )
                             if acquisition_index is not None:
-                                result[i, j-1, k] = self._final_state_projector.output_state_vector[meas_index][acquisition_index]  # qec round 1 to N - 1
+                                result[
+                                    i, j - 1, k
+                                ] = self._final_state_projector.output_state_vector[
+                                    meas_index
+                                ][
+                                    acquisition_index
+                                ]  # qec round 1 to N - 1
 
         return result
+
     # endregion

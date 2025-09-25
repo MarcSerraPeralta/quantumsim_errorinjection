@@ -17,7 +17,9 @@ class State:
         :class:`quantumsim.pauli_vectors.pauli_vector.PauliVectorBase`.
     """
 
-    def __init__(self, qubits, *, dim=2, pauli_vector_class=None, pauli_vector=None):
+    def __init__(
+        self, qubits, *, dim=2, pauli_vector_class=None, pauli_vector=None, force=False
+    ):
         self.qubits = list(qubits)
         if pauli_vector is not None:
             self.pauli_vector = pauli_vector
@@ -26,7 +28,7 @@ class State:
             if pauli_vector_class is None:
                 from ..pauli_vectors import Default
 
-                self.pauli_vector = Default(bases_)
+                self.pauli_vector = Default(bases_, force=force)
             else:
                 if not issubclass(pauli_vector_class, PauliVectorBase):
                     raise ValueError(
@@ -39,7 +41,7 @@ class State:
         return self.copy()
 
     def copy(self):
-        return State(self.qubits, pauli_vector=self.pauli_vector.copy())
+        return State(self.qubits, pauli_vector=self.pauli_vector.copy(), force=True)
 
     def exp_value(self, operator):
         """

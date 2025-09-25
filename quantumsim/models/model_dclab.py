@@ -124,22 +124,21 @@ class DiCarloLabModel(Model):
             self._idle(qubit_fluxed, time_phase_corr, q1_t1, q1_t2),
         )
         cphase_ = (
-            ParametrizedOperation(
-                lambda angle: cphase(
-                    rad(angle),
-                    self.p("cphase_leakage_rate", qubit_static, qubit_fluxed),
-                    self.p("cphase_leakage_phase", qubit_static, qubit_fluxed),
-                    self.p("cphase_leakage_mobility_rate", qubit_static, qubit_fluxed),
-                    self.p("cphase_leakage_mobility_phase", qubit_static, qubit_fluxed),
-                    self.p("cphase_phase_22", qubit_static, qubit_fluxed),
-                    self.p("cphase_phase_diff_02_12", qubit_static, qubit_fluxed),
-                    self.p("cphase_phase_diff_20_21", qubit_static, qubit_fluxed),
-                    self.p("cphase_phase_corr_error_01", qubit_static, qubit_fluxed),
-                    self.p("cphase_phase_corr_error_10", qubit_static, qubit_fluxed),
-                    self.p("cphase_phase_corr_error_2q", qubit_static, qubit_fluxed),
-                ),
-                basis * 2,
-            ).at(qubit_static, qubit_fluxed),
+            cphase(
+                rad(180),
+                self.p("cphase_leakage_rate", qubit_static, qubit_fluxed),
+                self.p("cphase_leakage_phase", qubit_static, qubit_fluxed),
+                self.p("cphase_leakage_mobility_rate", qubit_static, qubit_fluxed),
+                self.p("cphase_leakage_mobility_phase", qubit_static, qubit_fluxed),
+                self.p("cphase_phase_22", qubit_static, qubit_fluxed),
+                self.p("cphase_phase_diff_02_12", qubit_static, qubit_fluxed),
+                self.p("cphase_phase_diff_20_21", qubit_static, qubit_fluxed),
+                self.p("cphase_phase_corr_error_01", qubit_static, qubit_fluxed),
+                self.p("cphase_phase_corr_error_10", qubit_static, qubit_fluxed),
+                self.p("cphase_phase_corr_error_2q", qubit_static, qubit_fluxed),
+            )
+            .set_bases(basis * 2, basis * 2)
+            .at(qubit_static, qubit_fluxed),
         )
         return idle_half + cphase_ + idle_half + phase_corr
 
