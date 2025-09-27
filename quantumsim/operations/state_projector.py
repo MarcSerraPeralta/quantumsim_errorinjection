@@ -79,6 +79,7 @@ class StateProjector:
             not invalid_cartesian_product
         ), "Requires at least 1 state for measurement projection, check if the specified measurement qubits are correct or if dim_per_qubit is correct."
 
+        self._model = model
         self._meas_map: Dict[int, Callable] = {
             0: model.measure_project_0,
             1: model.measure_project_1,
@@ -114,10 +115,10 @@ class StateProjector:
     # region Class Methods
     # TODO: Also store finalized meas circuit with all output probabilities to prevent re-calculation.
     # TODO: For final (Data) qubit measurement, just take diagonal of density matrix as proxi for probability.
-    def construct_output_vector(self, state: State) -> NDArray[np.float32]:
+    def construct_output_vector(self, state: State) -> NDArray[float]:
         """:return: Probability vector for each product state measured."""
-        result: NDArray[np.float32] = np.empty(
-            shape=(len(self.output_state_vector)), dtype=np.float32
+        result: NDArray[float] = np.empty(
+            shape=(len(self.output_state_vector)), dtype=float
         )
 
         for i, meas_outcome_key in enumerate(
@@ -145,6 +146,28 @@ class StateProjector:
             return None
         return self._ordered_meas_qubit_ids.index(qubit_id)
 
+    def get_meas_outcome_to_circuit(self, state_key: IStateKey) -> FinalizedCircuit:
+        meas_outcome: np.ndarray = self._cartesian_product_array[self._cartesian_product_array_keys.index(state_key)]
+        _gates = []
+        for qubit_id in self._ordered_qubit_ids:
+            if qubit_id in self._ordered_meas_qubit_ids:
+                meas_outcome_index: int = self._ordered_meas_qubit_ids.index(
+                    qubit_id
+                )
+                _gates.append(
+                    self._meas_map[int(meas_outcome[meas_outcome_index])](
+                        qubit_id, t_start=0
+                    )
+                )
+            else:
+                _gates.append(self._model.idle_meas_gate(qubit_id, t_start=0))
+
+        return self._model.finalize(
+            Circuit(
+                qubits=self._ordered_qubit_ids,
+                gates=_gates,
+            )
+        )
     # endregion
 
     # region Static Class Methods

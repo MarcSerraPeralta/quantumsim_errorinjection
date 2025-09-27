@@ -1,10 +1,11 @@
 import warnings
-from quantumsim.operations.repetition_tree import LazyTreeCircuitEvaluation
+from quantumsim.operations.repetition_tree import LazyTreeCircuitEvaluation, RepeatedCircuitEvaluation
 import os
 import numpy as np
 from typing import List, Any
 import xarray as xr
 from pathlib import Path
+from tqdm import tqdm
 from quantumsim.circuits import Circuit
 from quantumsim import Setup
 from quantumsim.states.state import State
@@ -324,7 +325,7 @@ DISTANCE = 3
 
 # Ryzen 7 7800X3D (4.2 GHz); d=3, r=10, seed=10.000 => 3min
 qec_rounds: int = 10
-repetitions: int = 10_000
+repetitions: int = 1000  # 10_000
 state_dim: int = 3
 
 PLOT_CIRCUITS = False
@@ -606,63 +607,70 @@ if PLOT_CIRCUITS:
     plot(Circuit(qubits=qubits, gates=qec_gates))
     plt.show()
 
-state = State(qubits, dim=state_dim, force=True)  # initialization in ground state
+state = State(qubits, dim=state_dim, force=False)  # initialization in ground state
 initial_circuit @ state
-repetition_tree = LazyTreeCircuitEvaluation(
+# repetition_tree = LazyTreeCircuitEvaluation(
+#     initial_state=state,
+#     circuit=qec_circuit,
+#     state_projector=state_projector,
+#     final_state_projector=final_state_projector,
+#     max_depth=qec_rounds,
+# )
+repetition_tree = RepeatedCircuitEvaluation(
     initial_state=state,
     circuit=qec_circuit,
     state_projector=state_projector,
     final_state_projector=final_state_projector,
-    max_depth=qec_rounds,
 )
 result_tensor = repetition_tree.evaluate_as_array(
+    model=model,
     depth=qec_rounds,
     repetitions=repetitions,
     verbose=True,
 )
-
-if DISTANCE == 3:
-    code_layout = RepetitionCodeDistance3()
-elif DISTANCE == 5:
-    code_layout = RepetitionCodeDistance5()
-else:
-    raise ValueError(f"Distance {DISTANCE} not implemented.")
-
-involved_qubits_qubit_ids = [QubitIDObj(q) for q in qubits]
-initial_state = InitialStateContainer.from_ordered_list(
-    initial_states=[
-        InitialStateEnum.ONE if (i % 2 == 1) else InitialStateEnum.ZERO
-        for i, qubit_id in enumerate([qubit_id for qubit_id in involved_qubits_qubit_ids if qubit_id in code_layout.data_qubit_ids])
-    ]
-)
-error_identifier = construct_error_identifier(
-    result_tensor=result_tensor,
-    depth=qec_rounds,
-    repetitions=repetitions,
-    code_layout=code_layout,
-    initial_state=initial_state,
-    involved_qubits_qubit_ids=involved_qubits_qubit_ids,
-)
-dataset = error_identifier_to_dataset(
-    error_identifier=error_identifier,
-    initial_state=initial_state,
-    code_layout=code_layout,
-    noise_file_path=ROOT_DIR / noise_file,
-)
-print(dataset)
-common_path: Path = ROOT_DIR / "simulated_datasets"
-save_dataset_to_netcdf(dataset, common_path / "defect_rate_d3.nc", overwrite=True)
-
-for qubit in qubits:
-    print(
-        qubit,
-        error_identifier._classifier_lookup[QubitIDObj(qubit)].state_classification[
-            :qec_rounds
-        ],
-    )
-fig, ax = plot_all_defect_rate(
-    error_identifier=error_identifier,
-    included_rounds=qec_rounds,
-)
-
-plt.show()
+#
+# if DISTANCE == 3:
+#     code_layout = RepetitionCodeDistance3()
+# elif DISTANCE == 5:
+#     code_layout = RepetitionCodeDistance5()
+# else:
+#     raise ValueError(f"Distance {DISTANCE} not implemented.")
+#
+# involved_qubits_qubit_ids = [QubitIDObj(q) for q in qubits]
+# initial_state = InitialStateContainer.from_ordered_list(
+#     initial_states=[
+#         InitialStateEnum.ONE if (i % 2 == 1) else InitialStateEnum.ZERO
+#         for i, qubit_id in enumerate([qubit_id for qubit_id in involved_qubits_qubit_ids if qubit_id in code_layout.data_qubit_ids])
+#     ]
+# )
+# error_identifier = construct_error_identifier(
+#     result_tensor=result_tensor,
+#     depth=qec_rounds,
+#     repetitions=repetitions,
+#     code_layout=code_layout,
+#     initial_state=initial_state,
+#     involved_qubits_qubit_ids=involved_qubits_qubit_ids,
+# )
+# dataset = error_identifier_to_dataset(
+#     error_identifier=error_identifier,
+#     initial_state=initial_state,
+#     code_layout=code_layout,
+#     noise_file_path=ROOT_DIR / noise_file,
+# )
+# print(dataset)
+# common_path: Path = ROOT_DIR / "simulated_datasets"
+# save_dataset_to_netcdf(dataset, common_path / "defect_rate_d3.nc", overwrite=True)
+#
+# for qubit in qubits:
+#     print(
+#         qubit,
+#         error_identifier._classifier_lookup[QubitIDObj(qubit)].state_classification[
+#             :qec_rounds
+#         ],
+#     )
+# fig, ax = plot_all_defect_rate(
+#     error_identifier=error_identifier,
+#     included_rounds=qec_rounds,
+# )
+#
+# plt.show()

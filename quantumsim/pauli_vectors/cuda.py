@@ -409,7 +409,7 @@ class PauliVectorCuda(PauliVectorBase):
         """Renormalize to trace one."""
         tr = self.trace()
         if tr > 1e-8:
-            self._data *= np.float(1 / tr)
+            self._data *= float(1 / tr)
         else:
             warnings.warn(
                 "Density matrix trace is 0; likely your further computation "
