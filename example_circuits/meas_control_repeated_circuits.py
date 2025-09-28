@@ -37,9 +37,7 @@ from qce_circuit.connectivity.intrf_connectivity_surface_code import (
 )
 from qce_interp.utilities.expected_parities import initial_state_to_expected_parity
 from qce_interp.utilities.serialize_error_identifier import construct_processed_dataset
-from qce_interp.interface_definitions.intrf_error_identifier import (
-    ErrorDetectionIdentifier,
-)
+from qce_interp.interface_definitions.intrf_error_identifier import ErrorDetectionIdentifier
 from qce_interp.interface_definitions.intrf_state_classification import (
     StateClassifierContainer,
     ParityType,
@@ -277,8 +275,8 @@ class MeasurementControl:
     # endregion
 
     # region Class Constructor
-    def __init__(self, noise_model: DiCarloLabModel, repetition_code_type: RepetitionCodeType, state_dim: int = 3):
-        self._code_settings: CodeSettings = CodeSettings.from_code_type(repetition_code_type)
+    def __init__(self, noise_model: DiCarloLabModel, code_settings: CodeSettings, state_dim: int = 3):
+        self._code_settings: CodeSettings = code_settings
         self._noise_model: DiCarloLabModel = noise_model
         ancilla_qubits: List[str] = [
             qubit_name
@@ -349,6 +347,21 @@ class MeasurementControl:
         t_sqg: float = 20
         t_tqg: float = 60
         t_ref: float = 0
+        # Random flips
+        if error_coherence:
+            theta: float = np.rad2deg(2 * np.arcsin(np.sqrt(error_probability)))
+            gates.extend(
+                [
+                    self._noise_model.rotate_x("D4", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("Z1", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("D1", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("X1", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("D2", t_start=t_ref, theta=theta),
+                ]
+            )
+        else:
+            pass
+        t_ref += t_sqg
         # Start of Parities
         gates.extend(
             [
@@ -583,27 +596,43 @@ if __name__ == '__main__':
 
     meas_ctrl = MeasurementControl(
         noise_model=model,
-        repetition_code_type=RepetitionCodeType.DISTANCE_3,
+        code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3)
     )
 
-    error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
-        cycle_circuit=meas_ctrl.construct_distance_3_bitflip_circuit(),
-        depth=10,
-        repetitions=10_000,
-    )
-
-    dataset = meas_ctrl.construct_dataset(
-        error_identifier=error_identifier,
-        noise_file_path=ROOT_DIR / noise_file,
-    )
-
-    print(dataset)
     common_path: Path = ROOT_DIR / "simulated_datasets"
-    meas_ctrl.save_dataset_to_netcdf(dataset, common_path / "defect_rate_d3.nc", overwrite=True)
+    qec_rounds: int = 10
+    error_probabilities = np.linspace(0.0, 0.1, 5)
+    list_of_datasets: List[xr.Dataset] = []
+    for i, error_probability in enumerate(error_probabilities):
+        error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
+            cycle_circuit=meas_ctrl.construct_distance_3_bitflip_circuit(
+                error_probability=float(error_probability),
+                error_coherence=True,
+            ),
+            depth=qec_rounds,
+            repetitions=10_000,
+        )
 
-    fig, ax = plot_all_defect_rate(
-        error_identifier=error_identifier,
-        included_rounds=10,
-    )
+        dataset = meas_ctrl.construct_dataset(
+            error_identifier=error_identifier,
+            noise_file_path=ROOT_DIR / noise_file,
+        )
+        dataset.attrs["error_probability"] = error_probability
+        dataset.attrs["error_coherence"] = True
+        list_of_datasets.append(dataset)
 
-    plt.show()
+        # print(dataset)
+        meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_p{i}-{len(error_probabilities)}.nc", overwrite=True)
+        del dataset
+        # fig, ax = plot_all_defect_rate(
+        #     error_identifier=error_identifier,
+        #     included_rounds=qec_rounds,
+        # )
+
+    # Concatenate along a new, unnamed dimension
+    combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
+    # Assign the coordinate values to the new dimension
+    combined_stepwise.coords["error_probability"] = error_probabilities
+    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_stacked.nc", overwrite=True)
+
+    # plt.show()
