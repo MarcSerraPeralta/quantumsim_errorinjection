@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import List, Optional, Any
 import xarray as xr
@@ -20,13 +21,23 @@ from qce_circuit.utilities.singleton_base import SingletonABCMeta
 from qce_circuit.connectivity.intrf_channel_identifier import (
     IQubitID,
     QubitIDObj,
+    IEdgeID,
     EdgeIDObj,
+)
+from qce_circuit.connectivity.intrf_connectivity_surface_code import (
+    IParityGroup,
+    StabilizerType,
 )
 from qce_circuit.connectivity.intrf_connectivity_gate_sequence import (
     GateSequenceLayer,
     Operation,
 )
-from qce_circuit.connectivity.connectivity_surface_code import ParityGroup
+from qce_circuit.connectivity.connectivity_surface_code import (
+    ParityGroup,
+    Surface17Layer,
+    get_higher_frequency_qubit_id,
+    get_lower_frequency_qubit_id,
+)
 from qce_circuit.connectivity.generic_gate_sequence import (
     IGenericSurfaceCodeLayer,
     GenericSurfaceCode,
@@ -49,6 +60,14 @@ from quantumsim.operations.repetition_tree import LazyTreeCircuitEvaluation, Rep
 class RepetitionCodeType(Enum):
     DISTANCE_3 = auto()
     DISTANCE_5 = auto()
+
+
+@unique
+class InitialStateType(Enum):
+    ALL_ZERO = auto()
+    ALL_ONES = auto()
+    EVEN = auto()
+    ODD = auto()
 
 
 class RepetitionCodeDistance3(
@@ -197,7 +216,7 @@ class RepetitionCodeDistance5(
 @dataclass(frozen=True)
 class CodeSettings:
     qubits: List[str]
-    code_layout: IGenericSurfaceCodeLayer
+    code_layout: ISurfaceCodeLayer
 
     # region Class Methods
     @classmethod
@@ -215,12 +234,24 @@ class CodeSettings:
         )
 
     @classmethod
+    def as_single_stabilizer(cls, parity_group: IParityGroup) -> 'CodeSettings':
+        return CodeSettings(
+            qubits=[qubit_id.id for qubit_id in [parity_group.ancilla_id] + parity_group.data_ids],
+            code_layout=GenericSurfaceCode(
+                gate_sequences=[],
+                parity_group_z=[] if parity_group.parity_type == StabilizerType.STABILIZER_X else [parity_group],
+                parity_group_x=[] if parity_group.parity_type == StabilizerType.STABILIZER_Z else [parity_group],
+                surface_code_layer=Surface17Layer(),
+            ),
+        )
+
+    @classmethod
     def from_code_type(cls, repetition_code_type: RepetitionCodeType) -> Optional['CodeSettings']:
         if repetition_code_type == RepetitionCodeType.DISTANCE_3:
             return cls.as_distance_3()
         elif repetition_code_type == RepetitionCodeType.DISTANCE_5:
             return cls.as_distance_5()
-        raise NotImplemented(f"Code type ({repetition_code_type.name}) is not supported yet.")
+        raise NotImplementedError(f"Code type ({repetition_code_type.name}) is not supported yet.")
     # endregion
 
 
@@ -240,44 +271,18 @@ class MeasurementControl:
 
     @property
     def initial_circuit(self) -> FinalizedCircuit:
-        gates = []
-        t_ref: float = 0
-        data_qubit_count: int = 0
-        # Odd initial state
-        for qubit in self._code_settings.qubits:
-            if QubitIDObj(qubit) in self._code_settings.code_layout.data_qubit_ids:
-                if data_qubit_count % 2 == 0:
-                    gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
-                else:
-                    gates.append(self._noise_model.rotate_x_180(qubit, t_start=t_ref))
-                data_qubit_count += 1
-            else:
-                gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
-
-        return self._noise_model.finalize(Circuit(
-            qubits=self._code_settings.qubits,
-            gates=gates,
-        ))
+        return self.construct_initial_circuit(self._initial_state_type)
 
     @property
     def initial_state(self) -> InitialStateContainer:
-        data_qubit_names: List[str] = [
-            qubit_name
-            for qubit_name in self._code_settings.qubits
-            if QubitIDObj(qubit_name) in self._code_settings.code_layout.data_qubit_ids
-        ]
-        return InitialStateContainer.from_ordered_list(
-            initial_states=[
-                InitialStateEnum.ONE if (i % 2 == 1) else InitialStateEnum.ZERO
-                for i, qubit_id in enumerate(data_qubit_names)
-            ]
-        )
+        return self.construct_initial_state(self._initial_state_type)
     # endregion
 
     # region Class Constructor
-    def __init__(self, noise_model: DiCarloLabModel, code_settings: CodeSettings, state_dim: int = 3):
+    def __init__(self, noise_model: DiCarloLabModel, code_settings: CodeSettings, initial_state_type: InitialStateType = InitialStateType.ODD, state_dim: int = 3):
         self._code_settings: CodeSettings = code_settings
         self._noise_model: DiCarloLabModel = noise_model
+        self._initial_state_type: InitialStateType = initial_state_type
         ancilla_qubits: List[str] = [
             qubit_name
             for qubit_name in self._code_settings.qubits
@@ -304,7 +309,80 @@ class MeasurementControl:
     # endregion
 
     # region Class Methods
-    def construct_error_identifier(self, cycle_circuit: Circuit, depth: int = 10, repetitions: int = 10) -> ErrorDetectionIdentifier:
+    def construct_initial_circuit(self, initial_state_type: InitialStateType) -> FinalizedCircuit:
+        gates = []
+        t_ref: float = 0
+        # All zero (Even) initial state
+        if initial_state_type in [InitialStateType.ALL_ZERO, InitialStateType.EVEN]:
+            for qubit in self._code_settings.qubits:
+                gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
+            return self._noise_model.finalize(Circuit(
+                qubits=self._code_settings.qubits,
+                gates=gates,
+            ))
+        # All ones initial state
+        if initial_state_type == InitialStateType.ALL_ONES:
+            for qubit in self._code_settings.qubits:
+                if QubitIDObj(qubit) in self._code_settings.code_layout.data_qubit_ids:
+                    gates.append(self._noise_model.rotate_x_180(qubit, t_start=t_ref))
+                else:
+                    gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
+
+            return self._noise_model.finalize(Circuit(
+                qubits=self._code_settings.qubits,
+                gates=gates,
+            ))
+        # Odd initial state
+        if initial_state_type == InitialStateType.ODD:
+            data_qubit_count: int = 0
+            for qubit in self._code_settings.qubits:
+                if QubitIDObj(qubit) in self._code_settings.code_layout.data_qubit_ids:
+                    if data_qubit_count % 2 == 0:
+                        gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
+                    else:
+                        gates.append(self._noise_model.rotate_x_180(qubit, t_start=t_ref))
+                    data_qubit_count += 1
+                else:
+                    gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
+            return self._noise_model.finalize(Circuit(
+                qubits=self._code_settings.qubits,
+                gates=gates,
+            ))
+        raise NotImplementedError(f"Initial state type ({initial_state_type.name}) not yet supported.")
+
+    def construct_initial_state(self, initial_state_type: InitialStateType) -> InitialStateContainer:
+        data_qubit_names: List[str] = [
+            qubit_name
+            for qubit_name in self._code_settings.qubits
+            if QubitIDObj(qubit_name) in self._code_settings.code_layout.data_qubit_ids
+        ]
+        # All zero (Even) initial state
+        if initial_state_type in [InitialStateType.ALL_ZERO, InitialStateType.EVEN]:
+            return InitialStateContainer.from_ordered_list(
+                initial_states=[
+                    InitialStateEnum.ZERO
+                    for i, qubit_id in enumerate(data_qubit_names)
+                ]
+            )
+        # All ones initial state
+        if initial_state_type == InitialStateType.ALL_ONES:
+            return InitialStateContainer.from_ordered_list(
+                initial_states=[
+                    InitialStateEnum.ONE
+                    for i, qubit_id in enumerate(data_qubit_names)
+                ]
+            )
+        # Odd initial state
+        if initial_state_type == InitialStateType.ODD:
+            return InitialStateContainer.from_ordered_list(
+                initial_states=[
+                    InitialStateEnum.ONE if (i % 2 == 1) else InitialStateEnum.ZERO
+                    for i, qubit_id in enumerate(data_qubit_names)
+                ]
+            )
+        raise NotImplementedError(f"Initial state type ({initial_state_type.name}) not yet supported.")
+
+    def construct_error_identifier(self, cycle_circuit: Circuit, depth: int = 10, repetitions: int = 10, **error_identifier_construction_kwargs) -> ErrorDetectionIdentifier:
         # Construct initial state
         state = State(self._code_settings.qubits, dim=self.state_dim, force=False)  # initialization in ground state
         _ = self.initial_circuit @ state
@@ -328,6 +406,7 @@ class MeasurementControl:
             code_layout=self._code_settings.code_layout,
             initial_state=self.initial_state,
             involved_qubits_qubit_ids=[QubitIDObj(qubit_name) for qubit_name in self._code_settings.qubits],
+            **error_identifier_construction_kwargs,
         )
         return error_identifier
 
@@ -347,6 +426,7 @@ class MeasurementControl:
         t_sqg: float = 20
         t_tqg: float = 60
         t_ref: float = 0
+        qubits: List[str] = self._code_settings.qubits
         # Random flips
         if error_coherence:
             theta: float = np.rad2deg(2 * np.arcsin(np.sqrt(error_probability)))
@@ -458,6 +538,221 @@ class MeasurementControl:
     # endregion
 
     # region Static Class Methods
+    @staticmethod
+    def construct_detector_only_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+        gates = []
+        t_sqg: float = 20
+        t_tqg: float = 60
+        t_ref: float = 0
+        # Start of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.idle_sq_gate(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        # End of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_m90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.idle_sq_gate(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        # Buffer period
+        for i, edge_id in enumerate(parity_group.edge_ids):
+            zz_gates = []
+            for zz_edge in parity_group.edge_ids:
+                zz_msq: IQubitID = get_higher_frequency_qubit_id(zz_edge, code_layout)
+                zz_lsq: IQubitID = get_lower_frequency_qubit_id(zz_edge, code_layout)
+                zz_gates.append(noise_model.zz_coupling_2q(zz_lsq.id, zz_msq.id, t_start=t_ref))
+            for qubit_id in [parity_group.ancilla_id] + parity_group.data_ids:
+                zz_gates.append(noise_model.idle_tq_gate(qubit_id.id, t_start=t_ref))
+            gates.extend(zz_gates)
+            t_ref += t_tqg
+        return Circuit(
+            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
+            gates=gates,
+        )
+
+    @staticmethod
+    def construct_detector_inverse_parity_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+        gates = []
+        t_sqg: float = 20
+        t_tqg: float = 60
+        t_ref: float = 0
+        # Start of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.idle_sq_gate(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        # End of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.idle_sq_gate(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        # Buffer period
+        for i, edge_id in enumerate(parity_group.edge_ids):
+            zz_gates = []
+            for zz_edge in parity_group.edge_ids:
+                zz_msq: IQubitID = get_higher_frequency_qubit_id(zz_edge, code_layout)
+                zz_lsq: IQubitID = get_lower_frequency_qubit_id(zz_edge, code_layout)
+                zz_gates.append(noise_model.zz_coupling_2q(zz_lsq.id, zz_msq.id, t_start=t_ref))
+            for qubit_id in [parity_group.ancilla_id] + parity_group.data_ids:
+                zz_gates.append(noise_model.idle_tq_gate(qubit_id.id, t_start=t_ref))
+            gates.extend(zz_gates)
+            t_ref += t_tqg
+        return Circuit(
+            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
+            gates=gates,
+        )
+
+    @staticmethod
+    def construct_decoherence_only_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+        gates = []
+        t_sqg: float = 20
+        t_tqg: float = 60
+        t_ref: float = 0
+        # Start of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.idle_sq_gate(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        # Middle of Parities
+        for i, edge_id in enumerate(parity_group.edge_ids):
+            zz_gates = []
+            for zz_edge in parity_group.edge_ids:
+                zz_msq: IQubitID = get_higher_frequency_qubit_id(zz_edge, code_layout)
+                zz_lsq: IQubitID = get_lower_frequency_qubit_id(zz_edge, code_layout)
+                zz_gates.append(noise_model.zz_coupling_2q(zz_lsq.id, zz_msq.id, t_start=t_ref))
+            for qubit_id in [parity_group.ancilla_id] + parity_group.data_ids:
+                zz_gates.append(noise_model.idle_tq_gate(qubit_id.id, t_start=t_ref))
+            gates.extend(zz_gates)
+            t_ref += t_tqg
+        # End of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_m90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.idle_sq_gate(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        return Circuit(
+            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
+            gates=gates,
+        )
+
+    @staticmethod
+    def construct_relaxation_data_constant_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+        gates = []
+        t_sqg: float = 20
+        t_tqg: float = 60
+        t_ref: float = 0
+        # Start of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.idle_sq_gate(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        # Middle of Parities
+        for i, edge_id in enumerate(parity_group.edge_ids):
+            zz_gates = []
+            for zz_edge in parity_group.edge_ids:
+                zz_msq: IQubitID = get_higher_frequency_qubit_id(zz_edge, code_layout)
+                zz_lsq: IQubitID = get_lower_frequency_qubit_id(zz_edge, code_layout)
+                zz_gates.append(noise_model.zz_coupling_2q(zz_lsq.id, zz_msq.id, t_start=t_ref))
+            for qubit_id in [parity_group.ancilla_id] + parity_group.data_ids:
+                zz_gates.append(noise_model.idle_tq_gate(qubit_id.id, t_start=t_ref))
+            gates.extend(zz_gates)
+            t_ref += t_tqg
+        # End of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_m90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.rotate_x_180(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        return Circuit(
+            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
+            gates=gates,
+        )
+
+    @staticmethod
+    def construct_parity_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+        gates = []
+        t_sqg: float = 20
+        t_tqg: float = 60
+        t_ref: float = 0
+        # Start of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.idle_sq_gate(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        # Middle of Parities
+        for i, edge_id in enumerate(parity_group.edge_ids):
+            msq: IQubitID = get_higher_frequency_qubit_id(edge_id, code_layout)
+            lsq: IQubitID = get_lower_frequency_qubit_id(edge_id, code_layout)
+            cphase_gate = [noise_model.cphase(lsq.id, msq.id, t_start=t_ref)]
+            zz_edges: List[IEdgeID] = [_edge_id for _edge_id in parity_group.edge_ids if _edge_id is not edge_id]
+            zz_gates = []
+            for zz_edge in zz_edges:
+                zz_msq: IQubitID = get_higher_frequency_qubit_id(zz_edge, code_layout)
+                zz_lsq: IQubitID = get_lower_frequency_qubit_id(zz_edge, code_layout)
+                zz_gates.append(noise_model.zz_coupling_2q(zz_lsq.id, zz_msq.id, t_start=t_ref))
+            for qubit_id in [parity_group.ancilla_id] + parity_group.data_ids:
+                zz_gates.append(noise_model.idle_tq_gate(qubit_id.id, t_start=t_ref))
+
+            gates.extend(cphase_gate + zz_gates)
+            t_ref += t_tqg
+        # End of Parities
+        gates.extend(
+            [
+                noise_model.rotate_y_m90(parity_group.ancilla_id.id, t_start=t_ref),
+            ] + [
+                noise_model.rotate_x_180(data_qubit_id.id, t_start=t_ref)
+                for data_qubit_id in parity_group.data_ids
+            ]
+        )
+        t_ref += t_sqg
+        return Circuit(
+            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
+            gates=gates,
+        )
+
     @staticmethod
     def tensor_to_error_identifier(
             result_tensor: np.ndarray,
@@ -582,7 +877,6 @@ class MeasurementControl:
 
 
 if __name__ == '__main__':
-    import os
     from qce_interp.visualization.plot_defect_rate import (
         plot_all_defect_rate,
     )
@@ -622,8 +916,7 @@ if __name__ == '__main__':
         list_of_datasets.append(dataset)
 
         # print(dataset)
-        meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_p{i}-{len(error_probabilities)}.nc", overwrite=True)
-        del dataset
+        # meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_p{i}-{len(error_probabilities)}.nc", overwrite=True)
         # fig, ax = plot_all_defect_rate(
         #     error_identifier=error_identifier,
         #     included_rounds=qec_rounds,
