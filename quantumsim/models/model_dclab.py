@@ -208,6 +208,20 @@ class DiCarloLabModel(Model):
 
     @Model.gate(
         duration="time_1qubit",
+        plot_metadata={"style": "box", "label": "$rX(180, {prob})$"},
+    )
+    def random_rotate_x_180(self, qubit, prob=1, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        half_duration = 0.5 * self.p("time_1qubit", qubit)
+        return (
+            self._idle(qubit, half_duration, t1, t2),
+            ops.random_rotate_x(rad(180), prob=prob).set_bases(basis, basis).at(qubit),
+            self._idle(qubit, half_duration, t1, t2),
+        )
+
+    @Model.gate(
+        duration="time_1qubit",
         plot_metadata={"style": "box", "label": "$X12({theta})$"},
     )
     def rotate_x12(self, qubit, t_start=None):

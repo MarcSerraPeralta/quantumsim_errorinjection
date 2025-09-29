@@ -59,6 +59,28 @@ def rotate_x(angle=np.pi):
     return Operation.from_kraus(matrix, bases1_default)
 
 
+def random_rotate_x(angle=np.pi, prob=1):
+    """A random single qubit rotation around :math:`Ox` axis.
+
+    Parameters
+    ----------
+    angle: float, optional
+        Rotation angle in radians. Default is :math:`\\pi`.
+    prob: float, optional
+        Probability that the X rotation is applied.
+
+    Returns
+    -------
+    Operation
+        An operation, that corresponds to the rotation.
+    """
+    sin, cos = np.sin(angle / 2), np.cos(angle / 2)
+    matrix = np.array([[cos, -1j * sin, 0], [-1j * sin, cos, 0], [0, 0, 1]])
+    k1 = np.sqrt(1 - prob) * np.eye(3)
+    k2 = np.sqrt(prob) * matrix
+    return Operation.from_kraus((k1, k2), bases1_default)
+
+
 def rotate_x12(angle=np.pi):
     """A perfect single qubit rotation around :math:`Ox_{12}` axis.
 
