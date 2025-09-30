@@ -1,11 +1,14 @@
 import numpy as np
-import quantumsim.operations.qutrits as ops
+import quantumsim.operations.qubits as ops2
+import quantumsim.operations.qutrits as ops3
 from quantumsim import bases
 from quantumsim.operations import Operation, ParametrizedOperation
 from .cphase import cphase, zz_coupling
 from quantumsim.models import Model
+from typing import Dict, Tuple, List, Iterable
 
-basis = (bases.general(3),)
+qubit_basis = (bases.general(2),)
+qutrit_basis = (bases.general(3),)
 basis_classical = (bases.general(3).subbasis([0, 1, 2]),)
 
 rad = np.deg2rad
@@ -13,16 +16,32 @@ rad = np.deg2rad
 
 class DiCarloLabModel(Model):
     dim = 3
-    _ptm_dephase = ops.rotate_x(0).set_bases(basis_classical, basis_classical)
+    _ptm_dephase = ops3.rotate_x(0).set_bases(basis_classical, basis_classical)
     _ptm_project = [
-        ops.rotate_x(0).set_bases(
+        ops3.rotate_x(0).set_bases(
             (bases.general(3).subbasis([i]),), (bases.general(3).subbasis([i]),)
         )
         for i in range(3)
     ]
 
-    def __init__(self, setup, *, measurement_full_projection=False):
+    def __init__(self, setup, dim_lookup: Dict[str, int], *, measurement_full_projection=False):
         super().__init__(setup)
+        self.dim_to_basis = {
+            2: qubit_basis,
+            3: qutrit_basis,
+        }
+        dim_to_ops = {
+            2: ops2,
+            3: ops3,
+        }
+        self.basis_lookup: Dict[str, Tuple] = {
+            qubit_name: self.dim_to_basis[dim]
+            for qubit_name, dim in dim_lookup.items()
+        }
+        self.ops_lookup = {
+            qubit_name: dim_to_ops[dim]
+            for qubit_name, dim in dim_lookup.items()
+        }
         if measurement_full_projection:
             self.measure = self.measure_project
         else:
@@ -40,11 +59,13 @@ class DiCarloLabModel(Model):
     )
     def zz_coupling_1q(self, qubit_static, qubit_fluxed, t_start=None):
         time = self.p("time_1qubit", qubit_static, qubit_fluxed)
+        input_output_basis = self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
         zz_coupling_ = (
             zz_coupling(
                 self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
+                input_output_basis,
             )
-            .set_bases(basis * 2, basis * 2)
+            .set_bases(input_output_basis, input_output_basis)
             .at(qubit_static, qubit_fluxed),
         )
         return zz_coupling_
@@ -61,11 +82,13 @@ class DiCarloLabModel(Model):
     )
     def zz_coupling_2q(self, qubit_static, qubit_fluxed, t_start=None):
         time = self.p("time_2qubit", qubit_static, qubit_fluxed)
+        input_output_basis = self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
         zz_coupling_ = (
             zz_coupling(
                 self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
+                input_output_basis,
             )
-            .set_bases(basis * 2, basis * 2)
+            .set_bases(input_output_basis, input_output_basis)
             .at(qubit_static, qubit_fluxed),
         )
         return zz_coupling_
@@ -82,11 +105,13 @@ class DiCarloLabModel(Model):
     )
     def zz_coupling_measurement(self, qubit_static, qubit_fluxed, t_start=None):
         time = self.p("time_measure", qubit_static, qubit_fluxed)
+        input_output_basis = self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
         zz_coupling_ = (
             zz_coupling(
                 self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
+                input_output_basis,
             )
-            .set_bases(basis * 2, basis * 2)
+            .set_bases(input_output_basis, input_output_basis)
             .at(qubit_static, qubit_fluxed),
         )
         return zz_coupling_
@@ -123,6 +148,7 @@ class DiCarloLabModel(Model):
             self._idle(qubit_static, time_phase_corr, q0_t1, q0_t2),
             self._idle(qubit_fluxed, time_phase_corr, q1_t1, q1_t2),
         )
+        input_output_basis = self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
         cphase_ = (
             cphase(
                 rad(180),
@@ -136,8 +162,9 @@ class DiCarloLabModel(Model):
                 self.p("cphase_phase_corr_error_01", qubit_static, qubit_fluxed),
                 self.p("cphase_phase_corr_error_10", qubit_static, qubit_fluxed),
                 self.p("cphase_phase_corr_error_2q", qubit_static, qubit_fluxed),
+                input_output_basis,
             )
-            .set_bases(basis * 2, basis * 2)
+            .set_bases(input_output_basis, input_output_basis)
             .at(qubit_static, qubit_fluxed),
         )
         return idle_half + cphase_ + idle_half + phase_corr
@@ -158,8 +185,8 @@ class DiCarloLabModel(Model):
         return (
             self._idle(qubit, half_duration, t1, t2),
             ParametrizedOperation(
-                lambda phi, theta: ops.rotate_euler(rad(phi), rad(theta), -rad(phi)),
-                basis,
+                lambda phi, theta: self.ops_lookup[qubit].rotate_euler(rad(phi), rad(theta), -rad(phi)),
+                self.basis_lookup[qubit],
             ),
             self._idle(qubit, half_duration, t1, t2),
         )
@@ -174,7 +201,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ParametrizedOperation(lambda theta: ops.rotate_x(rad(theta)), basis),
+            ParametrizedOperation(lambda theta: self.ops_lookup[qubit].rotate_x(rad(theta)), self.basis_lookup[qubit]),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -188,7 +215,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ops.rotate_x(rad(90)).set_bases(basis, basis).at(qubit),
+            self.ops_lookup[qubit].rotate_x(rad(90)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -202,7 +229,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ops.rotate_x(rad(180)).set_bases(basis, basis).at(qubit),
+            self.ops_lookup[qubit].rotate_x(rad(180)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -216,7 +243,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ops.random_rotate_x(rad(180), prob=prob).set_bases(basis, basis).at(qubit),
+            self.ops_lookup[qubit].random_rotate_x(rad(180), prob=prob).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -231,7 +258,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ParametrizedOperation(lambda theta: ops.rotate_x12(rad(theta)), basis),
+            ParametrizedOperation(lambda theta: self.ops_lookup[qubit].rotate_x12(rad(theta)), self.basis_lookup[qubit]),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -245,7 +272,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ops.rotate_x12(rad(180)).set_bases(basis, basis).at(qubit),
+            self.ops_lookup[qubit].rotate_x12(rad(180)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -259,7 +286,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ParametrizedOperation(lambda theta: ops.rotate_y(rad(theta)), basis),
+            ParametrizedOperation(lambda theta: self.ops_lookup[qubit].rotate_y(rad(theta)), self.basis_lookup[qubit]),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -273,7 +300,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ops.rotate_y(rad(180)).set_bases(basis, basis).at(qubit),
+            self.ops_lookup[qubit].rotate_y(rad(180)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -287,7 +314,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ops.rotate_y(rad(90)).set_bases(basis, basis).at(qubit),
+            self.ops_lookup[qubit].rotate_y(rad(90)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -301,7 +328,7 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ops.rotate_y(rad(-90)).set_bases(basis, basis).at(qubit),
+            self.ops_lookup[qubit].rotate_y(rad(-90)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -310,7 +337,7 @@ class DiCarloLabModel(Model):
             self.p(name, qubit)
             for name in ("meas_prob01", "meas_prob12", "meas_prob10", "meas_prob21")
         ]
-        return ops.meas_butterfly(*args).at(qubit)
+        return self.ops_lookup[qubit].meas_butterfly(*args).at(qubit)
 
     def _project(self, qubit, state):
         if state == -1:
@@ -474,6 +501,7 @@ class DiCarloLabModel(Model):
             ops_t2 = []
 
         op_t1 = t1**-0.5 * np.array([[0, 1, 0], [0, 0, np.sqrt(2)], [0, 0, 0]])
+
         anharmonicity = self.p("anharmonicity", qubit)
         if not np.allclose(anharmonicity, 0.0):
             ham = np.array(
@@ -485,9 +513,22 @@ class DiCarloLabModel(Model):
             )
         else:
             ham = None
+
+        dim, = self.basis_lookup[qubit]
+        if dim.dim_hilbert == 2:  # Slice matrix dimensions to work with qubit-state
+            op_t1 = op_t1[:2, :2]
+            ops_t2 = [op[:2, :2] for op in ops_t2]
+            ham = None
+
         return Operation.from_lindblad_form(
             duration,
-            (bases.general(3),),
+            self.basis_lookup[qubit],
             hamiltonian=ham,
             lindblad_ops=[op_t1, *ops_t2],
         ).at(qubit)
+
+    def get_ordered_qubits_to_basis(self, qubits: List[str]) -> Iterable:
+        return [
+            self.basis_lookup[qubit_name][0]
+            for qubit_name in qubits
+        ]

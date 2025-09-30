@@ -7,7 +7,10 @@ from quantumsim.circuits import Circuit
 from quantumsim import Setup
 from quantumsim.states.state import State
 from quantumsim.models import DiCarloLabModel
-from quantumsim.operations.state_projector import StateProjector
+from quantumsim.operations.state_projector import (
+    StateProjector,
+    fast_choice,
+)
 from quantumsim.repetition_code.circuits import (
     distance_3_bitflip_gates,
     distance_5_bitflip_gates,
@@ -27,6 +30,17 @@ DISTANCE = 3
 qec_rounds: int = 10
 repetitions: int = 10_000
 state_dim: int = 3
+dim_lookup = {
+    "D7": 3,  # 2,
+    "Z3": 3,
+    "D4": 3,
+    "Z1": 3,
+    "D1": 3,  # 2,
+    "X1": 3,
+    "D2": 3,  # 2,
+    "X2": 3,
+    "D3": 3,  # 2,
+}
 
 
 PLOT_CIRCUITS = False
@@ -45,7 +59,10 @@ data_qubits = [q for q in qubits if "D" in q]
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 setup = Setup.from_file(os.path.join(current_dir, "..", noise_file))
-model = DiCarloLabModel(setup=setup)
+model = DiCarloLabModel(
+    setup=setup,
+    dim_lookup=dim_lookup,
+)
 state_projector = StateProjector(
     ordered_qubit_ids=qubits,
     meas_qubit_ids=anc_qubits,
@@ -71,11 +88,12 @@ else:
 initial_circuit = model.finalize(Circuit(qubits=qubits, gates=init_gates))
 qec_circuit = model.finalize(Circuit(qubits=qubits, gates=qec_gates))
 
+rng = np.random.default_rng()
 random_array = np.random.rand(repetitions, qec_rounds)
-meas_outcome_index: NDArray[int] = np.zeros(
+meas_outcome_indices: NDArray[int] = np.zeros(
     shape=(
         repetitions,
-        qec_rounds,
+        qec_rounds + 1,   # +1 for data-qubit measurement storage
     ),
     dtype=int,
 )
@@ -84,13 +102,15 @@ meas_outcome_index: NDArray[int] = np.zeros(
 for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
     outcomes = []
     state: State = State(
-        qubits, dim=state_dim, force=True
+        qubits, dim_lookup=dim_lookup, force=True
     )  # initialization in ground state
 
     initial_circuit @ state
 
     # Iterate through qec-cycles
     for j in range(qec_rounds):
+        last_qec_round: bool = j == qec_rounds - 1
+
         qec_circuit @ state
 
         # extract ancilla outcome probabilities from the trace
@@ -98,16 +118,15 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
             anc_qubit_idx = state.qubits.index(anc_qubit)
             probs = state.pauli_vector.meas_prob(anc_qubit_idx)
             # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
-            probs = [0 if (-1e-10 <= p <= 0.0) else p for p in probs]
-            probs = [1 if (1.0 <= p <= 1.0 + 1e-10) else p for p in probs]
-            outcome = np.random.choice(len(probs), p=probs)
+            probs = np.clip(probs, 0.0, 1.0)
+            outcome = fast_choice(p=probs, rng=rng)
             outcomes.append(outcome)
-
-        last_qec_round: bool = j == qec_rounds - 1
 
         # update state from sampled outcomes
         if not last_qec_round:
-            meas_outcome = "".join(map(str, outcomes[-len(anc_qubits) :]))
+            meas_outcome = "".join(map(str, outcomes[-len(anc_qubits):]))
+            meas_outcome_index: int = state_projector.output_state_vector_keys.index(meas_outcome)
+            meas_outcome_indices[i, j] = meas_outcome_index
             meas_project_circuit = state_projector.meas_outcome_to_circuit[meas_outcome]
             meas_project_circuit @ state
 
@@ -117,9 +136,12 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
                 data_qubit_idx = state.qubits.index(data_qubit)
                 probs = state.pauli_vector.meas_prob(data_qubit_idx)
                 # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
-                probs = [0 if (-1e-10 <= p <= 0.0) else p for p in probs]
-                probs = [1 if (1.0 <= p <= 1.0 + 1e-10) else p for p in probs]
-                outcome = np.random.choice(len(probs), p=probs)
+                probs = np.clip(probs, 0.0, 1.0)
+                outcome = fast_choice(p=probs, rng=rng)
                 outcomes.append(outcome)
 
-print(outcomes)
+            meas_outcome = "".join(map(str, outcomes[-len(data_qubits):]))
+            meas_outcome_index: int = final_state_projector.output_state_vector_keys.index(meas_outcome)
+            meas_outcome_indices[i, j + 1] = meas_outcome_index
+
+print(meas_outcome_indices)

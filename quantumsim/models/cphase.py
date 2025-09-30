@@ -18,6 +18,7 @@ def cphase(
     phase_corr_error_01,
     phase_corr_error_10,
     phase_corr_error_2q,
+    basis,
 ):
     """
 
@@ -76,7 +77,7 @@ def cphase(
     cz_unitary = ideal_unitary @ noisy_unitary
     if not verify_kraus_unitarity(cz_unitary):
         raise RuntimeError("CPhase gate is not unitary, " "verify provided parameters.")
-    cz_op = Operation.from_kraus(cz_unitary, (bases.general(3),) * 2)
+    cz_op = Operation.from_kraus(cz_unitary, basis)
     return cz_op
 
 
@@ -121,6 +122,7 @@ def _exchange_generator(
 
 def zz_coupling(
     zz_coupling_11,
+    basis,
 ):
     zz_unitary = expm(
         1j
@@ -139,5 +141,5 @@ def zz_coupling(
         raise RuntimeError(
             "ZZ-coupling gate is not unitary, " "verify provided parameters."
         )
-    zz_op = Operation.from_kraus(zz_unitary, (bases.general(3),) * 2)
+    zz_op = Operation.from_kraus(zz_unitary, basis)
     return zz_op

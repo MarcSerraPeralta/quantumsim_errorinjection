@@ -107,7 +107,8 @@ class StateProjector:
                 Circuit(
                     qubits=self._ordered_qubit_ids,
                     gates=_gates,
-                )
+                ),
+                bases_in=model.get_ordered_qubits_to_basis(self._ordered_qubit_ids),
             )
 
     # endregion
@@ -196,3 +197,16 @@ class StateProjector:
         ]
 
     # endregion
+
+
+def fast_choice(p: np.ndarray, rng: np.random.Generator) -> int:
+    """
+    Choose index based on probability array p quickly.
+    :param p: probability array summing to 1
+    :param rng: random number generator
+    :return: selected index
+    """
+    cumulative_p = np.cumsum(p)
+    random_number = rng.random()
+    idx = np.searchsorted(cumulative_p, random_number, side="right")
+    return idx

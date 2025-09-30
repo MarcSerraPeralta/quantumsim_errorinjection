@@ -2,6 +2,7 @@ from quantumsim.algebra import sigma
 from .. import bases
 from ..pauli_vectors import PauliVectorBase
 import numpy as np
+from typing import Dict
 
 
 class State:
@@ -18,13 +19,16 @@ class State:
     """
 
     def __init__(
-        self, qubits, *, dim=2, pauli_vector_class=None, pauli_vector=None, force=False
+        self, qubits, *, dim_lookup: Dict[str, int], pauli_vector_class=None, pauli_vector=None, force=False
     ):
         self.qubits = list(qubits)
         if pauli_vector is not None:
             self.pauli_vector = pauli_vector
         else:
-            bases_ = (bases.general(dim).subbasis([0]),) * len(self.qubits)
+            bases_ = tuple([
+                bases.general(dim_lookup.get(qubit_name, 2)).subbasis([0])
+                for qubit_name in self.qubits
+            ])
             if pauli_vector_class is None:
                 from ..pauli_vectors import Default
 
