@@ -34,6 +34,11 @@ class StateProjector:
         return self._ordered_qubit_ids
 
     @property
+    def ordered_measured_qubit_ids(self) -> List[str]:
+        """:return: Array-like of order qubit-IDs"""
+        return self._ordered_meas_qubit_ids
+
+    @property
     def nr_measured_qubits(self) -> int:
         """:return: Number of measured qubits"""
         return len(self._ordered_meas_qubit_ids)

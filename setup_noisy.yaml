@@ -190,3 +190,71 @@ setup:
     cphase_phase_corr_error_2q: 0.087222
   - qubits: ["D2", "Z1"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .000093  # rad / ns
+  - qubits: ["D2", "X2"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0098 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.024422
+    cphase_phase_corr_error_10: 0.120366
+    cphase_phase_corr_error_2q: 0.087222
+  - qubits: [ "D3", "X2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0098 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.024422
+    cphase_phase_corr_error_10: 0.120366
+    cphase_phase_corr_error_2q: 0.087222
+  - qubits: ["Z3", "D4"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0098 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.024422
+    cphase_phase_corr_error_10: 0.120366
+    cphase_phase_corr_error_2q: 0.087222
+  - qubits: [ "D7", "Z3" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0098 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.024422
+    cphase_phase_corr_error_10: 0.120366
+    cphase_phase_corr_error_2q: 0.087222
+  - qubits: [ "Z3", "D7" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+  - qubits: [ "Z1", "D1" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+  - qubits: [ "X1", "D1" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+  - qubits: [ "X1", "D2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+  - qubits: [ "X2", "D2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns
+  - qubits: [ "X2", "D3" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .000101  # rad / ns

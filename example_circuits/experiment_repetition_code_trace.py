@@ -30,18 +30,22 @@ from quantumsim.repetition_code.circuits import (
     distance_5_prep_initial_state_gates,
 )
 from qce_circuit.connectivity.intrf_channel_identifier import QubitIDObj
+from qce_interp.visualization.plot_defect_rate import (
+    plot_all_defect_rate,
+)
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 np.set_printoptions(precision=4, suppress=True)
 
 noise_file = "setup_noisy.yaml"
-noise_file = "setup_perfect.yaml"
+# noise_file = "setup_perfect.yaml"
 
 DISTANCE = 3
 
 # Ryzen 7 7800X3D (4.2 GHz); d=3, r=10, seed=10.000 => 3min
 qec_rounds: int = 10
-repetitions: int = 10  # 10_000
+repetitions: int = 10_000
 state_dim: int = 3
 dim_lookup = {
     "D7": 3,  # 2,
@@ -125,7 +129,6 @@ meas_outcome_indices: NDArray[int] = np.zeros(
 
 # Populate measurement outcome indices
 for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
-    outcomes = []
     state: State = State(
         qubits, dim_lookup=dim_lookup, force=True
     )  # initialization in ground state
@@ -133,49 +136,47 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
     initial_circuit @ state
 
     # Iterate through qec-cycles
-    for j in range(qec_rounds):
-        last_qec_round: bool = j == qec_rounds - 1
+    for j in range(qec_rounds + 1):
+        outcomes = []
+        last_qec_round: bool = j == qec_rounds
 
-        qec_circuit @ state
+        # Determine state projector (round dependent)
+        current_state_projector = final_state_projector
+        if not last_qec_round:
+            qec_circuit @ state
+            current_state_projector = state_projector
 
         # extract ancilla outcome probabilities from the trace
-        for anc_qubit in anc_qubits:
-            anc_qubit_idx = state.qubits.index(anc_qubit)
-            probs = state.pauli_vector.meas_prob(anc_qubit_idx)
+        for qubit_id in current_state_projector.ordered_measured_qubit_ids:
+            qubit_idx = state.qubits.index(qubit_id)
+            probs = state.pauli_vector.meas_prob(qubit_idx)
             # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
             probs = np.clip(probs, 0.0, 1.0)
-            outcome = fast_choice(p=probs, rng=rng)
+            # outcome = fast_choice(p=probs, rng=rng)
+            outcome = np.random.choice(len(probs), p=probs)
             outcomes.append(outcome)
 
+        qubit_indices = [
+            current_state_projector.ordered_qubit_ids.index(qubit_name)
+            for qubit_name in current_state_projector.ordered_measured_qubit_ids
+        ]
+
         # update state from sampled outcomes
+        meas_outcome = "".join(map(str, outcomes[-len(current_state_projector.ordered_measured_qubit_ids):]))
+        meas_outcome_index: int = current_state_projector.output_state_vector_keys.index(meas_outcome)
+        meas_outcome_indices[i, j] = meas_outcome_index
         if not last_qec_round:
-            meas_outcome = "".join(map(str, outcomes[-len(anc_qubits):]))
-            meas_outcome_index: int = state_projector.output_state_vector_keys.index(meas_outcome)
-            meas_outcome_indices[i, j] = meas_outcome_index
-            meas_project_circuit = state_projector.meas_outcome_to_circuit[meas_outcome]
-            meas_project_circuit @ state
+            meas_project_circuit = current_state_projector.meas_outcome_to_circuit[meas_outcome]
+            qec_circuit @ state
+            state.pauli_vector.renormalize()
 
-        # Execute data readout only at last qec-round
-        if last_qec_round:
-            for data_qubit in data_qubits:
-                data_qubit_idx = state.qubits.index(data_qubit)
-                probs = state.pauli_vector.meas_prob(data_qubit_idx)
-                # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
-                probs = np.clip(probs, 0.0, 1.0)
-                outcome = fast_choice(p=probs, rng=rng)
-                outcomes.append(outcome)
-
-            meas_outcome = "".join(map(str, outcomes[-len(data_qubits):]))
-            meas_outcome_index: int = final_state_projector.output_state_vector_keys.index(meas_outcome)
-            meas_outcome_indices[i, j + 1] = meas_outcome_index
-
-print(meas_outcome_indices)
+# print(meas_outcome_indices)
 result_tensor = process_state_projection(
     state_projection_array=meas_outcome_indices,
     state_projector=state_projector,
     final_state_projector=final_state_projector,
 )
-print(result_tensor)
+# print(result_tensor)
 error_identifier = tensor_to_error_identifier(
     result_tensor=result_tensor,
     depth=qec_rounds,
@@ -190,6 +191,12 @@ dataset = error_identifier_to_dataset(
     code_layout=code_layout,
     noise_config_string=""
 )
-print(dataset)
+# print(dataset)
 # common_path: Path = ROOT_DIR / "simulated_datasets"
 # save_dataset_to_netcdf(dataset, common_path / "defect_rate_d3.nc", overwrite=True)
+
+fig, ax = plot_all_defect_rate(
+    error_identifier=error_identifier,
+    included_rounds=qec_rounds,
+)
+plt.show()
