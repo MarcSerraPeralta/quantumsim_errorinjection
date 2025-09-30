@@ -103,14 +103,23 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
             outcome = np.random.choice(len(probs), p=probs)
             outcomes.append(outcome)
 
+        last_qec_round: bool = j == qec_rounds - 1
+
         # update state from sampled outcomes
-        meas_outcome = "".join(map(str, outcomes[-len(anc_qubits) :]))
-        meas_project_circuit = state_projector.meas_outcome_to_circuit[meas_outcome]
-        meas_project_circuit @ state
+        if not last_qec_round:
+            meas_outcome = "".join(map(str, outcomes[-len(anc_qubits) :]))
+            meas_project_circuit = state_projector.meas_outcome_to_circuit[meas_outcome]
+            meas_project_circuit @ state
 
         # Execute data readout only at last qec-round
-        last_qec_round: bool = j == qec_rounds - 1
         if last_qec_round:
-            pass
+            for data_qubit in data_qubits:
+                data_qubit_idx = state.qubits.index(data_qubit)
+                probs = state.pauli_vector.meas_prob(data_qubit_idx)
+                # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
+                probs = [0 if (-1e-10 <= p <= 0.0) else p for p in probs]
+                probs = [1 if (1.0 <= p <= 1.0 + 1e-10) else p for p in probs]
+                outcome = np.random.choice(len(probs), p=probs)
+                outcomes.append(outcome)
 
 print(outcomes)
