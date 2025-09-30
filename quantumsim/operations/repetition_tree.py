@@ -12,8 +12,7 @@
 #                … …
 # -------------------------------------------
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
-
+from typing import Dict, List, Optional, Set, Tuple
 import numpy as np
 from numpy.typing import NDArray
 from tqdm import tqdm
@@ -440,3 +439,225 @@ class RepeatedCircuitEvaluation:
 
         return result
     # endregion
+
+
+class FlattenedCircuitEvaluation:
+    """
+    Behaviour class, designed for CUDA execution of constant-depth circuit evaluations.
+    """
+
+    # region Class Properties
+    @property
+    def available_index_count(self) -> int:
+        return self.total_chains - self.count_unavailable()
+    # endregion
+
+    # region Class Constructor
+    def __init__(self, dimension: int, ancilla_count: int, rounds: int):
+        """
+        Initializes the MaskManager.
+
+        :param dimension: The output dimension (d).
+        :param ancilla_count: The number of ancilla qubits to measure (a).
+        :param rounds: The number of QEC cycle rounds (r).
+        """
+        self.dimension: int = dimension
+        self.ancilla_count: int = ancilla_count
+        self.rounds: int = rounds
+        self.base: int = self.dimension ** self.ancilla_count
+        self.total_chains: int = self.base ** self.rounds
+
+        # Pre-compute the divisors (B**(r-n)) for O(1) lookup.
+        # The key is the prefix length 'n'.
+        self.divisors: Dict[int, int] = {
+            n: self.base ** (self.rounds - n) for n in range(1, self.rounds + 1)
+        }
+
+        # Storage for the pre-computed mask prefixes.
+        # Key: prefix length 'n'. Value: a set of masked prefixes.
+        self.masks: Dict[int, Set[int]] = {n: set() for n in range(1, self.rounds + 1)}
+    # endregion
+
+    # region Class Methods
+    def get_state_indices(self, index: int) -> np.ndarray:
+        """Calculates the unique sequence of output state indices for a given input index.
+
+        This function maps a single integer `index` to a unique sequence of
+        state indices of length `rounds`. This is mathematically equivalent to
+        representing the number `index` in base B, where B = dimension ** ancilla_count.
+
+        The mathematical relationship is:
+        index = s_{r-1}*B^{r-1} + ... + s_1*B^1 + s_0*B^0
+
+        :param index: The input index, from 0 to d^(a*r) - 1.
+        :return: A numpy array of length `rounds` containing the unique sequence of output state indices.
+        """
+        base: int = self.base
+        total_chains: int = self.total_chains
+        rounds: int = self.rounds
+
+        if not (0 <= index < total_chains):
+            raise ValueError(
+                f"Input index {index} is out of the valid range [0, {total_chains - 1}]"
+            )
+
+        output_indices: np.ndarray = np.zeros(rounds, dtype=int)
+        current_value: int = index
+
+        # Iterate from the last position (least significant) to the first (most significant)
+        for i in range(rounds - 1, -1, -1):
+            # The remainder gives the digit (state index)
+            output_indices[i] = current_value % base
+            # Update the value for the next iteration
+            current_value //= base
+
+        return output_indices
+
+    def add_mask(self, mask_index: int, n: int):
+        """
+        Adds a new mask to the manager.
+
+        :param mask_index: The index whose first n sequence values define the mask.
+        :param n: The length of the prefix to mask (from 1 to r).
+        """
+        if not (1 <= n <= self.rounds):
+            raise ValueError(f"Mask length n={n} must be in [1, {self.rounds}]")
+
+        # Calculate the prefix value that defines this mask
+        divisor: int = self.divisors[n]
+        prefix: int = mask_index // divisor
+
+        # Add the prefix to the set for the given length n
+        self.masks[n].add(prefix)
+
+    def is_available(self, index: int) -> bool:
+        """
+        Checks if a given index is available (i.e., not masked).
+
+        The check is O(M) where M is the number of distinct mask lengths defined,
+        which is at most O(r).
+
+        :param index: The index to check.
+        :return: True if the index is not masked, False otherwise.
+        """
+        # Check against masks for every possible prefix length
+        for n, masked_prefixes in self.masks.items():
+            if not masked_prefixes:
+                continue
+
+            # Calculate the prefix for the index being checked
+            divisor: int = self.divisors[n]
+            current_prefix: int = index // divisor
+
+            # If its prefix is in the set of masked prefixes, it's not available
+            if current_prefix in masked_prefixes:
+                return False
+
+        # If no mask was matched, the index is available
+        return True
+
+    def find_next_available(self, start_index: int) -> Optional[int]:
+        """
+        Finds the first available index at or after a given starting index.
+
+        This method efficiently jumps over blocks of masked indices rather
+        than checking them one by one.
+
+        :param start_index: The index from which to start the search (inclusive).
+        :return: The first available index, or None if no available index is found.
+        """
+        candidate_index: int = start_index
+
+        while candidate_index < self.total_chains:
+            # Find all masks that block the current candidate index
+            blocking_masks_info: List[Tuple[int, int]] = []
+            for n, masked_prefixes in self.masks.items():
+                if not masked_prefixes:
+                    continue
+
+                divisor: int = self.divisors[n]
+                current_prefix: int = candidate_index // divisor
+
+                if current_prefix in masked_prefixes:
+                    blocking_masks_info.append((current_prefix, divisor))
+
+            # If the list is empty, the index is available
+            if not blocking_masks_info:
+                return candidate_index
+
+            # If blocked, calculate the next potential candidate by "jumping"
+            # over the end of the largest blocking range.
+            max_jump_target: int = 0
+            for prefix, divisor in blocking_masks_info:
+                jump_target = (prefix + 1) * divisor
+                if jump_target > max_jump_target:
+                    max_jump_target = jump_target
+
+            candidate_index = max_jump_target
+
+        # If the loop completes, no available index was found
+        return None
+
+    def count_unavailable(self) -> int:
+        """
+        Calculates the total number of unique unavailable (masked) indices.
+
+        This method avoids double-counting by converting masks into integer
+        intervals and calculating the size of their union. The complexity is
+        dominated by sorting the intervals, making it O(M log M) where M is the
+        total number of unique masks.
+
+        :return: The total count of unavailable indices.
+        """
+        # Generate all [start, end] intervals from the masks
+        intervals: List[Tuple[int, int]] = []
+        for n, prefixes in self.masks.items():
+            divisor: int = self.divisors[n]
+            block_size: int = self.base ** (self.rounds - n)
+            for prefix in prefixes:
+                start_index: int = prefix * block_size
+                end_index: int = start_index + block_size - 1
+                intervals.append((start_index, end_index))
+
+        if not intervals:
+            return 0
+
+        # Sort intervals based on their start index
+        intervals.sort()
+
+        # Merge overlapping intervals and sum their sizes
+        total_unavailable_count: int = 0
+        merged_start, merged_end = intervals[0]
+
+        for i in range(1, len(intervals)):
+            next_start, next_end = intervals[i]
+
+            # Check for overlap with the current merged interval
+            if next_start <= merged_end:
+                # They overlap, so extend the merged interval
+                merged_end = max(merged_end, next_end)
+            else:
+                # No overlap, the previous merged interval is complete.
+                # Add its size to the total count.
+                total_unavailable_count += (merged_end - merged_start + 1)
+                # Start a new merged interval
+                merged_start, merged_end = next_start, next_end
+
+        # Add the size of the last merged interval
+        total_unavailable_count += (merged_end - merged_start + 1)
+
+        return total_unavailable_count
+    # endregion
+
+
+if __name__ == '__main__':
+
+    logic = FlattenedCircuitEvaluation(ancilla_count=2, dimension=2, rounds=5)
+    print(logic.count_unavailable(), logic.available_index_count)
+    logic.add_mask(mask_index=10, n=2)
+    print(logic.base, logic.total_chains)
+
+    # for i in range(100):
+    #     print(i, logic.get_state_indices(i), logic.is_available(i))
+    print(logic.find_next_available(start_index=0))
+    print(logic.count_unavailable(), logic.available_index_count)
