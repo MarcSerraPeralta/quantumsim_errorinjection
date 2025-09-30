@@ -8,8 +8,7 @@ from quantumsim import Setup
 from quantumsim.states.state import State
 from quantumsim.models import DiCarloLabModel
 from quantumsim.operations.state_projector import StateProjector
-
-from rep_code_utils import (
+from quantumsim.repetition_code.circuits import (
     distance_3_bitflip_gates,
     distance_5_bitflip_gates,
     distance_3_prep_initial_state_gates,
@@ -22,7 +21,7 @@ np.set_printoptions(precision=4, suppress=True)
 noise_file = "setup_noisy.yaml"
 noise_file = "setup_perfect.yaml"
 
-DISTANCE = 5
+DISTANCE = 3
 
 # Ryzen 7 7800X3D (4.2 GHz); d=3, r=10, seed=10.000 => 3min
 qec_rounds: int = 10
@@ -101,13 +100,11 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
             # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
             probs = [0 if (-1e-10 <= p <= 0.0) else p for p in probs]
             probs = [1 if (1.0 <= p <= 1.0 + 1e-10) else p for p in probs]
-            print(probs)
             outcome = np.random.choice(len(probs), p=probs)
             outcomes.append(outcome)
 
         # update state from sampled outcomes
         meas_outcome = "".join(map(str, outcomes[-len(anc_qubits) :]))
-        print(meas_outcome)
         meas_project_circuit = state_projector.meas_outcome_to_circuit[meas_outcome]
         meas_project_circuit @ state
 
@@ -116,4 +113,4 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
         if last_qec_round:
             pass
 
-    print(outcomes)
+print(outcomes)
