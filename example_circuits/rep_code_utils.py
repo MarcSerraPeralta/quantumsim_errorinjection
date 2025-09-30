@@ -154,9 +154,9 @@ def distance_5_bitflip_gates(model):
             model.idle_sq_gate("D1", t_start=t_ref),
             model.idle_sq_gate("D2", t_start=t_ref),
             model.idle_sq_gate("D3", t_start=t_ref),
-            model.rotate_y_90("Z3", t_start=t_ref),
+            model.rotate_y_m90("Z3", t_start=t_ref),
             model.rotate_y_90("Z1", t_start=t_ref),
-            model.rotate_y_90("X1", t_start=t_ref),
+            model.rotate_y_m90("X1", t_start=t_ref),
             model.rotate_y_90("X2", t_start=t_ref),
         ]
     )
@@ -200,9 +200,9 @@ def distance_5_bitflip_gates(model):
             model.idle_sq_gate("D2", t_start=t_ref),
             model.idle_sq_gate("D3", t_start=t_ref),
             model.idle_sq_gate("Z3", t_start=t_ref),
-            model.rotate_y_90("Z1", t_start=t_ref),
+            model.rotate_y_m90("Z1", t_start=t_ref),
             model.idle_sq_gate("X1", t_start=t_ref),
-            model.rotate_y_90("X2", t_start=t_ref),
+            model.rotate_y_m90("X2", t_start=t_ref),
         ]
     )
     t_ref += t_sqg
