@@ -41,7 +41,7 @@ DISTANCE = 3
 
 # Ryzen 7 7800X3D (4.2 GHz); d=3, r=10, seed=10.000 => 3min
 qec_rounds: int = 10
-repetitions: int = 2  # 10_000
+repetitions: int = 10  # 10_000
 state_dim: int = 3
 dim_lookup = {
     "D7": 3,  # 2,
