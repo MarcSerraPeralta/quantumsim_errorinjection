@@ -174,6 +174,51 @@ class StateProjector:
                 gates=_gates,
             )
         )
+
+    def construct_assignment_matrix(self) -> np.ndarray:
+        assignment_matrices: List[np.ndarray] = [
+            self._model.assign_matrix(qubit)
+            for qubit in self.ordered_measured_qubit_ids
+        ]
+        result: np.ndarray = assignment_matrices[0]
+        for i in range(1, len(assignment_matrices)):
+            result = np.kron(result, assignment_matrices[i])
+        return result
+
+    def apply_assignment_uncertainty(self, input_meas_indices: np.ndarray) -> np.ndarray:
+        """
+        Simulates random state transitions for a batch of input states based on a probability matrix.
+
+        This function uses a vectorized implementation of inverse transform sampling.
+        For each input state, it selects an output state based on the probability
+        distribution given by the corresponding row in the combined_matrix.
+
+        :param input_meas_indices: A numpy array of integers of any shape, representing the
+                             current states of the system.
+        :return: A numpy array of the same shape as input_states, containing
+                 the randomly chosen output states.
+        """
+        # Store original shape and flatten the input array for vectorized processing.
+        # .ravel() is efficient as it returns a view of the original array when possible.
+        assignment_matrix: np.ndarray = self.construct_assignment_matrix()
+        original_shape: tuple = input_meas_indices.shape
+        flat_input_meas_indices = input_meas_indices.ravel()
+
+        # Select the probability distributions for each flattened input state.
+        # If flat_input_states has shape (M,), this will be an (M, N) matrix.
+        probabilities: np.ndarray = assignment_matrix[flat_input_meas_indices]
+        cdfs: np.ndarray = np.cumsum(probabilities, axis=1)
+
+        # Generate a uniform random number for each input state.
+        # Shape is (M, 1) to enable broadcasting against the (M, N) cdfs matrix.
+        num_inputs: int = flat_input_meas_indices.size
+        random_uniforms: np.ndarray = np.random.rand(num_inputs, 1)
+        # Find the first index where the CDF is greater than the random number.
+        # `argmax` on a boolean array returns the index of the first True value.
+        flat_output_states: np.ndarray = (random_uniforms < cdfs).argmax(axis=1)
+        output_assign_indices: np.ndarray = flat_output_states.reshape(original_shape)
+
+        return output_assign_indices
     # endregion
 
     # region Static Class Methods
