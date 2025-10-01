@@ -48,8 +48,8 @@ def ptm_convert_basis(ptm, bi_old, bo_old, bi_new, bo_new):
 
 def dm_to_pv(dm, bases):
     n_qubits = len(bases)
-    d = bases[0].dim_hilbert
-    einsum_args = [dm.reshape((d,) * (2 * n_qubits)), list(range(2 * n_qubits))]
+    dims = [b.dim_hilbert for b in bases]
+    einsum_args = [dm.reshape(dims * 2), list(range(2 * n_qubits))]
     for i, b in enumerate(bases):
         einsum_args.append(b.vectors),
         einsum_args.append([2 * n_qubits + i, i + n_qubits, i])
@@ -58,12 +58,12 @@ def dm_to_pv(dm, bases):
 
 def pv_to_dm(pv, bases):
     nq = len(bases)
-    dim = bases[0].dim_hilbert
+    dims = [b.dim_hilbert for b in bases]
     einsum_args = [pv, list(range(2 * nq, 3 * nq))]
     for i, b in enumerate(bases):
         einsum_args.append(b.vectors)
         einsum_args.append([2 * nq + i, i, nq + i])
-    return np.einsum(*einsum_args, optimize=True).reshape((dim**nq,) * 2)
+    return np.einsum(*einsum_args, optimize=True).reshape((np.prod(dims),) * 2)
 
 
 def plm_lindbladian_part(lindblad_op, bases):
