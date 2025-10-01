@@ -52,36 +52,51 @@ def cphase(
         + (phase_corr_error_01 + phase_corr_error_10)
     )
 
-    ideal_unitary = expm(
-        1j
-        * _ideal_generator(
-            phase_10=phase_corr_error_10,
-            phase_01=phase_corr_error_01,
-            phase_11=rot_angle,
-            phase_02=rot_angle,
-            phase_12=phase_diff_02_12 - rot_angle,
-            phase_20=0,
-            phase_21=phase_diff_20_21,
-            phase_22=phase_22,
+    dimensionality = basis[0].dim_hilbert
+    if dimensionality == 2:
+        ideal_unitary = expm(
+            1j
+            * _ideal_generator_basis2(
+                phase_10=phase_corr_error_10,
+                phase_01=phase_corr_error_01,
+                phase_11=rot_angle,
+            )
         )
-    )
-    noisy_unitary = expm(
-        1j
-        * _exchange_generator(
-            leakage=4 * leakage_rate + qstatic_interf_leakage,
-            leakage_phase=leakage_phase,
-            leakage_mobility_rate=leakage_mobility_rate,
-            leakage_mobility_phase=leakage_mobility_phase,
+        cz_unitary = ideal_unitary
+    elif dimensionality == 3:
+        ideal_unitary = expm(
+            1j
+            * _ideal_generator_basis3(
+                phase_10=phase_corr_error_10,
+                phase_01=phase_corr_error_01,
+                phase_11=rot_angle,
+                phase_02=rot_angle,
+                phase_12=phase_diff_02_12 - rot_angle,
+                phase_20=0,
+                phase_21=phase_diff_20_21,
+                phase_22=phase_22,
+            )
         )
-    )
-    cz_unitary = ideal_unitary @ noisy_unitary
+        noisy_unitary = expm(
+            1j
+            * _exchange_generator(
+                leakage=4 * leakage_rate + qstatic_interf_leakage,
+                leakage_phase=leakage_phase,
+                leakage_mobility_rate=leakage_mobility_rate,
+                leakage_mobility_phase=leakage_mobility_phase,
+            )
+        )
+        cz_unitary = ideal_unitary @ noisy_unitary
+    else:
+        raise NotImplementedError(f"Dimensionality ({dimensionality}) is not supported. Please specify custom cz unitary.")
+
     if not verify_kraus_unitarity(cz_unitary):
         raise RuntimeError("CPhase gate is not unitary, " "verify provided parameters.")
     cz_op = Operation.from_kraus(cz_unitary, basis)
     return cz_op
 
 
-def _ideal_generator(
+def _ideal_generator_basis3(
     phase_01, phase_02, phase_10, phase_11, phase_12, phase_20, phase_21, phase_22
 ):
     phases = np.array(
@@ -95,6 +110,21 @@ def _ideal_generator(
             phase_20,
             phase_21,
             phase_22,
+        ]
+    )
+    generator = np.diag(phases).astype(complex)
+    return generator
+
+
+def _ideal_generator_basis2(
+    phase_01, phase_10, phase_11
+):
+    phases = np.array(
+        [
+            0,
+            phase_01,
+            phase_10,
+            phase_11,
         ]
     )
     generator = np.diag(phases).astype(complex)
@@ -124,19 +154,34 @@ def zz_coupling(
     zz_coupling_11,
     basis,
 ):
-    zz_unitary = expm(
-        1j
-        * _ideal_generator(
-            phase_10=0,
-            phase_01=0,
-            phase_11=zz_coupling_11,
-            phase_02=0,
-            phase_12=0,
-            phase_20=0,
-            phase_21=0,
-            phase_22=0,
+
+    dimensionality = basis[0].dim_hilbert
+    if dimensionality == 2:
+        zz_unitary = expm(
+            1j
+            * _ideal_generator_basis2(
+                phase_10=0,
+                phase_01=0,
+                phase_11=zz_coupling_11,
+            )
         )
-    )
+    elif dimensionality == 3:
+        zz_unitary = expm(
+            1j
+            * _ideal_generator_basis3(
+                phase_10=0,
+                phase_01=0,
+                phase_11=zz_coupling_11,
+                phase_02=0,
+                phase_12=0,
+                phase_20=0,
+                phase_21=0,
+                phase_22=0,
+            )
+        )
+    else:
+        raise NotImplementedError(f"Dimensionality ({dimensionality}) is not supported. Please specify custom zz unitary.")
+
     if not verify_kraus_unitarity(zz_unitary):
         raise RuntimeError(
             "ZZ-coupling gate is not unitary, " "verify provided parameters."
