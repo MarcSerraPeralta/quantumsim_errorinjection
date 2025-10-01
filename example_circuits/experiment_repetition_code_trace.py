@@ -48,15 +48,15 @@ qec_rounds: int = 10
 repetitions: int = 10_000
 state_dim: int = 3
 dim_lookup = {
-    "D7": 3,  # 2,
-    "Z3": 3,
-    "D4": 3,
-    "Z1": 3,
-    "D1": 3,  # 2,
-    "X1": 3,
-    "D2": 3,  # 2,
-    "X2": 3,
-    "D3": 3,  # 2,
+    "D7": state_dim,  # 2,
+    "Z3": state_dim,
+    "D4": state_dim,
+    "Z1": state_dim,
+    "D1": state_dim,  # 2,
+    "X1": state_dim,
+    "D2": state_dim,  # 2,
+    "X2": state_dim,
+    "D3": state_dim,  # 2,
 }
 
 
@@ -83,13 +83,13 @@ model = DiCarloLabModel(
 state_projector = StateProjector(
     ordered_qubit_ids=qubits,
     meas_qubit_ids=anc_qubits,
-    dim_per_qubit={anc: 3 for anc in anc_qubits},
+    dim_per_qubit={anc: state_dim for anc in anc_qubits},
     model=model,
 )
 final_state_projector = StateProjector(
     ordered_qubit_ids=qubits,
     meas_qubit_ids=data_qubits,
-    dim_per_qubit={data: 3 for data in data_qubits},
+    dim_per_qubit={data: state_dim for data in data_qubits},
     model=model,
 )
 
@@ -151,7 +151,7 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
             qubit_idx = state.qubits.index(qubit_id)
             probs = state.pauli_vector.meas_prob(qubit_idx)
             # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
-            probs = np.clip(probs, 0.0, 1.0)
+            probs = np.clip(probs, 0.0, 1.0) / np.sum(probs)
             # outcome = fast_choice(p=probs, rng=rng)
             outcome = np.random.choice(len(probs), p=probs)
             outcomes.append(outcome)
@@ -167,7 +167,7 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
         meas_outcome_indices[i, j] = meas_outcome_index
         if not last_qec_round:
             meas_project_circuit = current_state_projector.meas_outcome_to_circuit[meas_outcome]
-            qec_circuit @ state
+            meas_project_circuit @ state
             state.pauli_vector.renormalize()
 
 # print(meas_outcome_indices)

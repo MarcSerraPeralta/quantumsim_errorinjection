@@ -9,34 +9,37 @@ from typing import Dict, Tuple, List, Iterable
 
 qubit_basis = (bases.general(2),)
 qutrit_basis = (bases.general(3),)
-basis_classical = (bases.general(3).subbasis([0, 1, 2]),)
+qubit_basis_classical = (bases.general(2).subbasis([0, 1]),)
+qutrit_basis_classical = (bases.general(3).subbasis([0, 1, 2]),)
 
 rad = np.deg2rad
 
 
 class DiCarloLabModel(Model):
     dim = 3
-    _ptm_dephase = ops3.rotate_x(0).set_bases(basis_classical, basis_classical)
-    _ptm_project = [
-        ops3.rotate_x(0).set_bases(
-            (bases.general(3).subbasis([i]),), (bases.general(3).subbasis([i]),)
-        )
-        for i in range(3)
-    ]
 
     def __init__(self, setup, dim_lookup: Dict[str, int], *, measurement_full_projection=False):
         super().__init__(setup)
+        self.qubit_to_dim = dim_lookup
         self.dim_to_basis = {
             2: qubit_basis,
             3: qutrit_basis,
         }
-        dim_to_ops = {
-            2: ops2,
-            3: ops3,
+        self.dim_to_basis_classical = {
+            2: qubit_basis_classical,
+            3: qutrit_basis_classical,
         }
         self.basis_lookup: Dict[str, Tuple] = {
             qubit_name: self.dim_to_basis[dim]
             for qubit_name, dim in dim_lookup.items()
+        }
+        self.basis_classical_lookup: Dict[str, Tuple] = {
+            qubit_name: self.dim_to_basis_classical[dim]
+            for qubit_name, dim in dim_lookup.items()
+        }
+        dim_to_ops = {
+            2: ops2,
+            3: ops3,
         }
         self.ops_lookup = {
             qubit_name: dim_to_ops[dim]
@@ -46,6 +49,22 @@ class DiCarloLabModel(Model):
             self.measure = self.measure_project
         else:
             self.measure = self.measure_partial
+
+    def get_ptm_dephase(self, qubit):
+        dim = self.qubit_to_dim[qubit]
+        basis = self.basis_classical_lookup[qubit]
+        ptm_dephase = self.ops_lookup[qubit].rotate_x(0).set_bases(basis, basis)
+        return ptm_dephase
+
+    def get_ptm_project(self, qubit):
+        dim = self.qubit_to_dim[qubit]
+        ptm_project = [
+            self.ops_lookup[qubit].rotate_x(0).set_bases(
+                (bases.general(dim).subbasis([i]),), (bases.general(dim).subbasis([i]),)
+            )
+            for i in range(dim)
+        ]
+        return ptm_project
 
     @Model.gate(
         duration=0,
@@ -341,9 +360,9 @@ class DiCarloLabModel(Model):
 
     def _project(self, qubit, state):
         if state == -1:
-            return self._ptm_dephase
+            return self.get_ptm_dephase(qubit)
         else:
-            return self._ptm_project[state]
+            return self.get_ptm_project(qubit)[state]
 
     @Model.gate(
         duration="time_measure",
@@ -357,11 +376,11 @@ class DiCarloLabModel(Model):
             overlap = self.p("meas_overlap_01", qubit)
             if result == 0:
                 return Operation.from_ptm(
-                    np.diag([1 - overlap, overlap, 0]), basis_classical
+                    np.diag([1 - overlap, overlap, 0]), qutrit_basis_classical
                 )
             elif result == 1:
                 return Operation.from_ptm(
-                    np.diag([overlap, 1 - overlap, 1]), basis_classical
+                    np.diag([overlap, 1 - overlap, 1]), qutrit_basis_classical
                 )
             elif result == -1:
                 return self._ptm_dephase
@@ -371,7 +390,7 @@ class DiCarloLabModel(Model):
         return (
             self._idle(qubit, half_time, t1_meas, t1_meas),
             self._meas_butterfly(qubit),
-            ParametrizedOperation(project, basis_classical).at(qubit),
+            ParametrizedOperation(project, qutrit_basis_classical).at(qubit),
             self._meas_butterfly(qubit),
             self._idle(qubit, half_time, t1_meas, t1_meas),
         )
@@ -387,16 +406,16 @@ class DiCarloLabModel(Model):
 
         def project(result):
             if result in (0, 1, 2):
-                return self._ptm_project[result]
+                return self.get_ptm_project(qubit)[result]
             elif result == -1:
-                return self._ptm_dephase
+                return self.get_ptm_dephase(qubit)
             else:
                 raise ValueError("Unknown measurement result: {}".format(result))
 
         return (
             # self._idle(qubit, half_time, t1_meas, t1_meas),
             # self._meas_butterfly(qubit),
-            ParametrizedOperation(project, basis_classical).at(qubit),
+            ParametrizedOperation(project, qutrit_basis_classical).at(qubit),
             self._meas_butterfly(qubit),
             # self._idle(qubit, 2*half_time, t1_meas, t1_meas),
         )
@@ -407,8 +426,9 @@ class DiCarloLabModel(Model):
     )
     def measure_project_0(self, qubit, t_start=0):
         """Classical measurement noise needs to be added afterwards."""
+        basis = self.basis_classical_lookup[qubit]
         return (
-            self._ptm_project[0].set_bases(basis_classical, basis_classical).at(qubit),
+            self.get_ptm_project(qubit)[0].set_bases(basis, basis).at(qubit),
             self._meas_butterfly(qubit),
         )
 
@@ -418,8 +438,9 @@ class DiCarloLabModel(Model):
     )
     def measure_project_1(self, qubit, t_start=0):
         """Classical measurement noise needs to be added afterwards."""
+        basis = self.basis_classical_lookup[qubit]
         return (
-            self._ptm_project[1].set_bases(basis_classical, basis_classical).at(qubit),
+            self.get_ptm_project(qubit)[1].set_bases(basis, basis).at(qubit),
             self._meas_butterfly(qubit),
         )
 
@@ -429,8 +450,9 @@ class DiCarloLabModel(Model):
     )
     def measure_project_2(self, qubit, t_start=0):
         """Classical measurement noise needs to be added afterwards."""
+        basis = self.basis_classical_lookup[qubit]
         return (
-            self._ptm_project[2].set_bases(basis_classical, basis_classical).at(qubit),
+            self.get_ptm_project(qubit)[2].set_bases(basis, basis).at(qubit),
             self._meas_butterfly(qubit),
         )
 

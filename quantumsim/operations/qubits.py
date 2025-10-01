@@ -180,7 +180,10 @@ def controlled_rotation(angle=np.pi, axis="z"):
 def amp_damping(total_rate=None, *, exc_rate=None, damp_rate=None):
     if total_rate is not None:
         kraus = np.array(
-            [[[1, 0], [0, np.sqrt(1 - total_rate)]], [[0, np.sqrt(total_rate)], [0, 0]]]
+            [
+                [[1, 0], [0, np.sqrt(1 - total_rate)]],
+                [[0, np.sqrt(total_rate)], [0, 0]]
+            ]
         )
         return Operation.from_kraus(kraus, bases1_default)
     else:
@@ -259,3 +262,58 @@ def depolarization(rate):
         ]
     )
     return Operation.from_kraus(matrix, bases1_default)
+
+
+def amp_damping_qubit(p0_up, p1_down):
+    """
+    A gate, that excites or relaxes a qubit with a certain probability.
+
+    Parameters
+    ----------
+    p0_up : float
+        Probability to excite to state 1, being in the state 0
+    p1_down : float
+        Probability to relax to state 0, being in the state 1
+
+    Returns
+    -------
+        quantumsim.operation._PTMOperation
+    """
+    ptm = np.identity(4, dtype=float)
+    ptm[:2, :2] = [
+        [1.0 - p0_up, p1_down],
+        [p0_up, 1.0 - p1_down],
+    ]
+    basis = (bases.general(2),)
+    return Operation.from_ptm(ptm, basis, basis)
+
+
+def meas_butterfly(p0_up, p1_up, p1_down, p2_down):
+    """
+    Returns a gate, that corresponds to measurement-induced excitations.
+    Each measurement should be sandwiched by two of these gates (before
+    and after projection. This operation dephases the qubit immediately.
+
+    Note: if measurement-induced leakage is reported by RB, p1_up should
+    be twice larger, since RB would report average probabllity for both 0
+    and 1 state.
+
+    Parameters
+    ----------
+    p0_up : float
+        Probability to excite to state 1, being in the state 0
+    p1_up : float
+        Probability to excite to state 2, being in the state 1
+    p1_down : float
+        Probability to relax to state 0, being in the state 1
+    p2_down : float
+        Probability to relax to state 1, being in the state 2
+
+    Returns
+    -------
+        quantumsim.operation._PTMOperation
+    """
+    basis = (bases.general(2).computational_subbasis(),)
+    return amp_damping_qubit(p0_up, p1_down).set_bases(
+        bases_in=basis, bases_out=basis
+    )
