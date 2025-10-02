@@ -2,7 +2,7 @@
 # Module describing state measurement projector
 # -------------------------------------------
 from itertools import product
-from typing import List, Dict, Callable, Iterable, Optional
+from typing import List, Dict, Callable, Iterable, Optional, Any
 import numpy as np
 from numpy._typing import NDArray
 from quantumsim import DiCarloLabModel, State
@@ -152,7 +152,7 @@ class StateProjector:
             return None
         return self._ordered_meas_qubit_ids.index(qubit_id)
 
-    def get_meas_outcome_to_circuit(self, state_key: IStateKey) -> FinalizedCircuit:
+    def get_meas_outcome_to_circuit_gates(self, state_key: IStateKey) -> List[Any]:
         meas_outcome: np.ndarray = self._cartesian_product_array[self._cartesian_product_array_keys.index(state_key)]
         _gates = []
         for qubit_id in self._ordered_qubit_ids:
@@ -168,10 +168,13 @@ class StateProjector:
             else:
                 _gates.append(self._model.idle_meas_gate(qubit_id, t_start=0))
 
+        return _gates
+
+    def get_meas_outcome_to_circuit(self, state_key: IStateKey) -> FinalizedCircuit:
         return self._model.finalize(
             Circuit(
                 qubits=self._ordered_qubit_ids,
-                gates=_gates,
+                gates=self.get_meas_outcome_to_circuit_gates(state_key=state_key),
             )
         )
 
