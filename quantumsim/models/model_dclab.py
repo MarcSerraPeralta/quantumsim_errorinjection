@@ -18,7 +18,9 @@ rad = np.deg2rad
 class DiCarloLabModel(Model):
     dim = 3
 
-    def __init__(self, setup, dim_lookup: Dict[str, int], *, measurement_full_projection=False):
+    def __init__(
+        self, setup, dim_lookup: Dict[str, int], *, measurement_full_projection=False
+    ):
         super().__init__(setup)
         self.qubit_to_dim = dim_lookup
         self.dim_to_basis = {
@@ -30,8 +32,7 @@ class DiCarloLabModel(Model):
             3: qutrit_basis_classical,
         }
         self.basis_lookup: Dict[str, Tuple] = {
-            qubit_name: self.dim_to_basis[dim]
-            for qubit_name, dim in dim_lookup.items()
+            qubit_name: self.dim_to_basis[dim] for qubit_name, dim in dim_lookup.items()
         }
         self.basis_classical_lookup: Dict[str, Tuple] = {
             qubit_name: self.dim_to_basis_classical[dim]
@@ -42,8 +43,7 @@ class DiCarloLabModel(Model):
             3: ops3,
         }
         self.ops_lookup = {
-            qubit_name: dim_to_ops[dim]
-            for qubit_name, dim in dim_lookup.items()
+            qubit_name: dim_to_ops[dim] for qubit_name, dim in dim_lookup.items()
         }
         if measurement_full_projection:
             self.measure = self.measure_project
@@ -59,26 +59,20 @@ class DiCarloLabModel(Model):
     def get_ptm_project(self, qubit):
         dim = self.qubit_to_dim[qubit]
         ptm_project = [
-            self.ops_lookup[qubit].rotate_x(0).set_bases(
+            self.ops_lookup[qubit]
+            .rotate_x(0)
+            .set_bases(
                 (bases.general(dim).subbasis([i]),), (bases.general(dim).subbasis([i]),)
             )
             for i in range(dim)
         ]
         return ptm_project
 
-    @Model.gate(
-        duration=0,
-        plot_metadata={
-            "style": "line",
-            "markers": [
-                {"style": "marker", "label": "s"},
-                {"style": "marker", "label": "s"},
-            ],
-        },
-    )
     def zz_coupling_1q(self, qubit_static, qubit_fluxed, t_start=None):
         time = self.p("time_1qubit", qubit_static, qubit_fluxed)
-        input_output_basis = self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
+        input_output_basis = (
+            self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
+        )
         zz_coupling_ = (
             zz_coupling(
                 self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
@@ -89,19 +83,11 @@ class DiCarloLabModel(Model):
         )
         return zz_coupling_
 
-    @Model.gate(
-        duration=0,
-        plot_metadata={
-            "style": "line",
-            "markers": [
-                {"style": "marker", "label": "s"},
-                {"style": "marker", "label": "s"},
-            ],
-        },
-    )
     def zz_coupling_2q(self, qubit_static, qubit_fluxed, t_start=None):
         time = self.p("time_2qubit", qubit_static, qubit_fluxed)
-        input_output_basis = self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
+        input_output_basis = (
+            self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
+        )
         zz_coupling_ = (
             zz_coupling(
                 self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
@@ -112,19 +98,11 @@ class DiCarloLabModel(Model):
         )
         return zz_coupling_
 
-    @Model.gate(
-        duration=0,
-        plot_metadata={
-            "style": "line",
-            "markers": [
-                {"style": "marker", "label": "s"},
-                {"style": "marker", "label": "s"},
-            ],
-        },
-    )
     def zz_coupling_measurement(self, qubit_static, qubit_fluxed, t_start=None):
         time = self.p("time_measure", qubit_static, qubit_fluxed)
-        input_output_basis = self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
+        input_output_basis = (
+            self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
+        )
         zz_coupling_ = (
             zz_coupling(
                 self.p("zz_coupling_wfreq", qubit_static, qubit_fluxed) * time,
@@ -135,16 +113,6 @@ class DiCarloLabModel(Model):
         )
         return zz_coupling_
 
-    @Model.gate(
-        duration="time_2qubit",
-        plot_metadata={
-            "style": "line",
-            "markers": [
-                {"style": "marker", "label": "o"},
-                {"style": "marker", "label": "o"},
-            ],
-        },
-    )
     def cphase(self, qubit_static, qubit_fluxed, t_start=None):
         """CPhase gate. Parameters: angle (degrees)"""
         time_int = self.p("cphase_time_int", qubit_static, qubit_fluxed)
@@ -167,7 +135,9 @@ class DiCarloLabModel(Model):
             self._idle(qubit_static, time_phase_corr, q0_t1, q0_t2),
             self._idle(qubit_fluxed, time_phase_corr, q1_t1, q1_t2),
         )
-        input_output_basis = self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
+        input_output_basis = (
+            self.basis_lookup[qubit_static] + self.basis_lookup[qubit_fluxed]
+        )
         cphase_ = (
             cphase(
                 rad(180),
@@ -188,10 +158,6 @@ class DiCarloLabModel(Model):
         )
         return idle_half + cphase_ + idle_half + phase_corr
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$R_{{{phi}}}({theta})$"},
-    )
     def rotate(self, qubit, t_start=None):
         """Generic microwave rotation. Parameters: `phi`, `theta` (degrees).
         :math:`\\phi` is an angle, that specifies a rotation axis
@@ -204,15 +170,14 @@ class DiCarloLabModel(Model):
         return (
             self._idle(qubit, half_duration, t1, t2),
             ParametrizedOperation(
-                lambda phi, theta: self.ops_lookup[qubit].rotate_euler(rad(phi), rad(theta), -rad(phi)),
+                lambda phi, theta: self.ops_lookup[qubit].rotate_euler(
+                    rad(phi), rad(theta), -rad(phi)
+                ),
                 self.basis_lookup[qubit],
             ),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit", plot_metadata={"style": "box", "label": "$X({theta})$"}
-    )
     def rotate_x(self, qubit, t_start=None):
         """Microwave rotation around X axis. Parameters: `theta` (degrees)."""
         t1 = self.p("T1", qubit)
@@ -220,56 +185,52 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ParametrizedOperation(lambda theta: self.ops_lookup[qubit].rotate_x(rad(theta)), self.basis_lookup[qubit]),
+            ParametrizedOperation(
+                lambda theta: self.ops_lookup[qubit].rotate_x(rad(theta)),
+                self.basis_lookup[qubit],
+            ),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$X(90)$"},
-    )
     def rotate_x_90(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            self.ops_lookup[qubit].rotate_x(rad(90)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
+            self.ops_lookup[qubit]
+            .rotate_x(rad(90))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$X(180)$"},
-    )
     def rotate_x_180(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            self.ops_lookup[qubit].rotate_x(rad(180)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
+            self.ops_lookup[qubit]
+            .rotate_x(rad(180))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$rX(180, {prob})$"},
-    )
     def random_rotate_x_180(self, qubit, prob=1, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            self.ops_lookup[qubit].random_rotate_x(rad(180), prob=prob).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
+            self.ops_lookup[qubit]
+            .random_rotate_x(rad(180), prob=prob)
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$X12({theta})$"},
-    )
     def rotate_x12(self, qubit, t_start=None):
         """Microwave rotation around X12 axis. Parameters: `theta` (degrees)."""
         t1 = self.p("T1", qubit)
@@ -277,27 +238,26 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ParametrizedOperation(lambda theta: self.ops_lookup[qubit].rotate_x12(rad(theta)), self.basis_lookup[qubit]),
+            ParametrizedOperation(
+                lambda theta: self.ops_lookup[qubit].rotate_x12(rad(theta)),
+                self.basis_lookup[qubit],
+            ),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$X12(180)$"},
-    )
     def rotate_x12_180(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            self.ops_lookup[qubit].rotate_x12(rad(180)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
+            self.ops_lookup[qubit]
+            .rotate_x12(rad(180))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit", plot_metadata={"style": "box", "label": "$Y({theta})$"}
-    )
     def rotate_y(self, qubit, t_start=None):
         """Microwave rotation around Y axis. Parameters: `theta` (degrees)."""
         t1 = self.p("T1", qubit)
@@ -305,49 +265,49 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ParametrizedOperation(lambda theta: self.ops_lookup[qubit].rotate_y(rad(theta)), self.basis_lookup[qubit]),
+            ParametrizedOperation(
+                lambda theta: self.ops_lookup[qubit].rotate_y(rad(theta)),
+                self.basis_lookup[qubit],
+            ),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$Y(180)$"},
-    )
     def rotate_y_180(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            self.ops_lookup[qubit].rotate_y(rad(180)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
+            self.ops_lookup[qubit]
+            .rotate_y(rad(180))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$Y(90)$"},
-    )
     def rotate_y_90(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            self.ops_lookup[qubit].rotate_y(rad(90)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
+            self.ops_lookup[qubit]
+            .rotate_y(rad(90))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$Y(-90)$"},
-    )
     def rotate_y_m90(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            self.ops_lookup[qubit].rotate_y(rad(-90)).set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit]).at(qubit),
+            self.ops_lookup[qubit]
+            .rotate_y(rad(-90))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -364,10 +324,6 @@ class DiCarloLabModel(Model):
         else:
             return self.get_ptm_project(qubit)[state]
 
-    @Model.gate(
-        duration="time_measure",
-        plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
-    )
     def measure_partial(self, qubit, t_start=None):
         t1_meas = self.p("T1_meas", qubit)
         half_time = 0.5 * self.p("time_measure", qubit)
@@ -395,10 +351,6 @@ class DiCarloLabModel(Model):
             self._idle(qubit, half_time, t1_meas, t1_meas),
         )
 
-    @Model.gate(
-        duration="time_measure",
-        plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
-    )
     def measure_project(self, qubit, t_start=0):
         """Classical measurement noise needs to be added afterwards."""
         t1_meas = self.p("T1_meas", qubit)
@@ -420,10 +372,6 @@ class DiCarloLabModel(Model):
             # self._idle(qubit, 2*half_time, t1_meas, t1_meas),
         )
 
-    @Model.gate(
-        duration="time_measure",
-        plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
-    )
     def measure_project_0(self, qubit, t_start=0):
         """Classical measurement noise needs to be added afterwards."""
         basis = self.basis_classical_lookup[qubit]
@@ -432,10 +380,6 @@ class DiCarloLabModel(Model):
             self._meas_butterfly(qubit),
         )
 
-    @Model.gate(
-        duration="time_measure",
-        plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
-    )
     def measure_project_1(self, qubit, t_start=0):
         """Classical measurement noise needs to be added afterwards."""
         basis = self.basis_classical_lookup[qubit]
@@ -444,10 +388,6 @@ class DiCarloLabModel(Model):
             self._meas_butterfly(qubit),
         )
 
-    @Model.gate(
-        duration="time_measure",
-        plot_metadata={"style": "box", "label": r"$\circ\!\!\!\!\!\!\!\nearrow$"},
-    )
     def measure_project_2(self, qubit, t_start=0):
         """Classical measurement noise needs to be added afterwards."""
         basis = self.basis_classical_lookup[qubit]
@@ -459,10 +399,6 @@ class DiCarloLabModel(Model):
     def assign_matrix(self, qubit):
         return np.array(self.p("assign_matrix", qubit))
 
-    @Model.gate(
-        duration="time_measure",
-        plot_metadata={"style": "box", "label": "$Idle$"},
-    )
     def idle_measurement(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
@@ -470,10 +406,6 @@ class DiCarloLabModel(Model):
 
         return (self._idle(qubit, idling_time, t1, t2),)
 
-    @Model.gate(
-        duration="time_1qubit",
-        plot_metadata={"style": "box", "label": "$Idle$"},
-    )
     def idle_sq_gate(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
@@ -481,10 +413,6 @@ class DiCarloLabModel(Model):
 
         return (self._idle(qubit, idling_time, t1, t2),)
 
-    @Model.gate(
-        duration="time_2qubit",
-        plot_metadata={"style": "box", "label": "$Idle$"},
-    )
     def idle_tq_gate(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
@@ -492,10 +420,6 @@ class DiCarloLabModel(Model):
 
         return (self._idle(qubit, idling_time, t1, t2),)
 
-    @Model.gate(
-        duration="time_measure",
-        plot_metadata={"style": "box", "label": "$Idle$"},
-    )
     def idle_meas_gate(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
@@ -536,7 +460,7 @@ class DiCarloLabModel(Model):
         else:
             ham = None
 
-        dim, = self.basis_lookup[qubit]
+        (dim,) = self.basis_lookup[qubit]
         if dim.dim_hilbert == 2:  # Slice matrix dimensions to work with qubit-state
             op_t1 = op_t1[:2, :2]
             ops_t2 = [op[:2, :2] for op in ops_t2]
@@ -550,7 +474,4 @@ class DiCarloLabModel(Model):
         ).at(qubit)
 
     def get_ordered_qubits_to_basis(self, qubits: List[str]) -> Iterable:
-        return [
-            self.basis_lookup[qubit_name][0]
-            for qubit_name in qubits
-        ]
+        return [self.basis_lookup[qubit_name][0] for qubit_name in qubits]

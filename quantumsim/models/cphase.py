@@ -76,7 +76,6 @@ def cphase(
         )
         print("MISSING NOISE AND INCLUDE ROT_ANGLE!!!!")
         cz_unitary = ideal_unitary
-        print(np.round(cz_unitary, decimals=4))
     elif dim1 == 3 and dim2 == 2:
         ideal_unitary = expm(
             1j
@@ -211,8 +210,8 @@ def zz_coupling(
     basis,
 ):
 
-    dimensionality = basis[0].dim_hilbert
-    if dimensionality == 2:
+    dim1, dim2 = [b.dim_hilbert for b in basis]
+    if dim1 == 2 and dim2 == 2:
         zz_unitary = expm(
             1j
             * _ideal_generator_basis22(
@@ -221,7 +220,29 @@ def zz_coupling(
                 phase_11=zz_coupling_11,
             )
         )
-    elif dimensionality == 3:
+    elif dim1 == 2 and dim2 == 3:
+        zz_unitary = expm(
+            1j
+            * _ideal_generator_basis23(
+                phase_10=0,
+                phase_01=0,
+                phase_11=zz_coupling_11,
+                phase_02=0,
+                phase_12=0,
+            )
+        )
+    elif dim1 == 3 and dim2 == 2:
+        zz_unitary = expm(
+            1j
+            * _ideal_generator_basis32(
+                phase_10=0,
+                phase_01=0,
+                phase_11=zz_coupling_11,
+                phase_20=0,
+                phase_21=0,
+            )
+        )
+    elif dim1 == 3 and dim2 == 3:
         zz_unitary = expm(
             1j
             * _ideal_generator_basis33(
@@ -237,7 +258,7 @@ def zz_coupling(
         )
     else:
         raise NotImplementedError(
-            f"Dimensionality ({dimensionality}) is not supported. Please specify custom zz unitary."
+            f"Dimensionality ({dim1}, {dim2}) is not supported. Please specify custom zz unitary."
         )
 
     if not verify_kraus_unitarity(zz_unitary):
