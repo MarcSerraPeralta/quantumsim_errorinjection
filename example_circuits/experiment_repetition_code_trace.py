@@ -11,7 +11,10 @@ from quantumsim.operations.state_projector import (
     StateProjector,
     fast_choice,
 )
-from quantumsim.utilities.process_state_projection import process_state_projection
+from quantumsim.utilities.process_state_projection import (
+    process_state_projection,
+    process_assignment_errors,
+)
 from quantumsim.utilities.process_error_identifier import (
     error_identifier_to_dataset,
     tensor_to_error_identifier,
@@ -152,8 +155,7 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
             probs = state.pauli_vector.meas_prob(qubit_idx)
             # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
             probs = np.clip(probs, 0.0, 1.0) / np.sum(probs)
-            # outcome = fast_choice(p=probs, rng=rng)
-            outcome = np.random.choice(len(probs), p=probs)
+            outcome = fast_choice(p=probs, rng=rng)
             outcomes.append(outcome)
 
         qubit_indices = [
@@ -169,6 +171,14 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
             meas_project_circuit = current_state_projector.meas_outcome_to_circuit[meas_outcome]
             meas_project_circuit @ state
             state.pauli_vector.renormalize()
+
+# Apply assignment errors in bulk
+meas_outcome_indices = process_assignment_errors(
+    meas_outcome_indices=meas_outcome_indices,
+    state_projector=state_projector,
+    final_state_projector=final_state_projector,
+)
+# print(meas_outcome_indices)
 
 # print(meas_outcome_indices)
 result_tensor = process_state_projection(
