@@ -215,7 +215,7 @@ def zz_coupling(
     if dimensionality == 2:
         zz_unitary = expm(
             1j
-            * _ideal_generator_basis2(
+            * _ideal_generator_basis22(
                 phase_10=0,
                 phase_01=0,
                 phase_11=zz_coupling_11,
@@ -224,7 +224,7 @@ def zz_coupling(
     elif dimensionality == 3:
         zz_unitary = expm(
             1j
-            * _ideal_generator_basis3(
+            * _ideal_generator_basis33(
                 phase_10=0,
                 phase_01=0,
                 phase_11=zz_coupling_11,
