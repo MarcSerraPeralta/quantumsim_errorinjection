@@ -1,4 +1,5 @@
 import numpy as np
+from itertools import product
 from quantumsim.states.state import State
 import quantumsim.operations.qubits as ops2
 import quantumsim.operations.qutrits as ops3
@@ -82,6 +83,14 @@ print(np.round(state.pauli_vector.to_dm(), decimals=4))
 print("apply CZ operation")
 cz.operation(state.pauli_vector, *cz.indices)
 print(np.round(state.pauli_vector.to_dm(), decimals=4))
+
+# get diagonal of density matrix
+print("extract density matrix diagonal")
+diagonal = state.pauli_vector.diagonal()
+outcomes = list(product(*[list(range(dim_lookup[q])) for q in qubits]))
+diagonal = np.round(diagonal, decimals=4)
+for o, p in zip(outcomes, diagonal):
+    print(o, p)
 
 # apply measurement projection
 m_qb, m_qt = 1, 2

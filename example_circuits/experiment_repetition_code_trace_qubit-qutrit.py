@@ -1,6 +1,6 @@
 import warnings
 import os
-from itertools import chain
+from itertools import chain, product
 import numpy as np
 from numpy.typing import NDArray
 from tqdm import tqdm
@@ -42,10 +42,10 @@ np.set_printoptions(precision=4, suppress=True)
 noise_file = "setup_noisy.yaml"
 # noise_file = "setup_perfect.yaml"
 
-DISTANCE = 5
+DISTANCE = 3
 
 qec_rounds: int = 10
-repetitions: int = 100 #10_000
+repetitions: int = 1_000
 state_dim: int = 3
 dim_lookup = {
     "D7": 2,
@@ -160,15 +160,21 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
                 indexedop.operation(state.pauli_vector, *indices)
             current_state_projector = state_projector
 
-        # extract ancilla outcome probabilities from the trace
-        for qubit_id in current_state_projector.ordered_measured_qubit_ids:
-            qubit_idx = state.qubits.index(qubit_id)
-            probs = state.pauli_vector.meas_prob(qubit_idx)
-            # avoid problems with float, e.g. -1e-16 is negative so 'choice' is complaining
-            probs = np.clip(probs, 0.0, 1.0) / np.sum(probs)
-            # outcome = fast_choice(p=probs, rng=rng)
-            outcome = np.random.choice(len(probs), p=probs)
-            outcomes.append(outcome)
+        # extract ancilla outcome probabilities from the diagonal
+        probs = state.pauli_vector.diagonal()
+        probs = np.clip(probs, 0.0, 1.0)
+        probs /= np.sum(probs)
+        # fake outcomes, as not all qubits are measured
+        list_outcomes = list(product(*[list(range(dim_lookup[q])) for q in qubits]))
+        outcome_idx = np.random.choice(len(list_outcomes), p=probs)
+        outcome = list_outcomes[outcome_idx]
+        # 'trace out' all the non-measured qubits
+        outcome = [
+            o
+            for q, o in zip(qubits, outcome)
+            if q in current_state_projector.ordered_measured_qubit_ids
+        ]
+        outcomes += outcome
 
         qubit_indices = [
             current_state_projector.ordered_qubit_ids.index(qubit_name)
@@ -187,8 +193,8 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
         )
         meas_outcome_indices[i, j] = meas_outcome_index
         if not last_qec_round:
-            meas_project_gates = current_state_projector.get_meas_outcome_to_circuit_gates(
-                meas_outcome
+            meas_project_gates = (
+                current_state_projector.get_meas_outcome_to_circuit_gates(meas_outcome)
             )
             # apply measurement projection
             for indexedop in meas_project_gates:
