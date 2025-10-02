@@ -1,7 +1,7 @@
 # -------------------------------------------
 # Module describing state measurement projector
 # -------------------------------------------
-from itertools import product
+from itertools import product, chain
 from typing import List, Dict, Callable, Iterable, Optional, Any
 import numpy as np
 from numpy._typing import NDArray
@@ -94,6 +94,7 @@ class StateProjector:
         for meas_outcome, meas_outcome_key in zip(
             self._cartesian_product_array, self._cartesian_product_array_keys
         ):
+            """
             _gates = []
             for qubit_id in self._ordered_qubit_ids:
                 if qubit_id in self._ordered_meas_qubit_ids:
@@ -115,6 +116,8 @@ class StateProjector:
                 ),
                 bases_in=model.get_ordered_qubits_to_basis(self._ordered_qubit_ids),
             )
+            """
+            self.meas_outcome_to_circuit[meas_outcome_key] = None
 
     # endregion
 
@@ -168,7 +171,7 @@ class StateProjector:
             else:
                 _gates.append(self._model.idle_meas_gate(qubit_id, t_start=0))
 
-        return _gates
+        return list(chain(*_gates))
 
     def get_meas_outcome_to_circuit(self, state_key: IStateKey) -> FinalizedCircuit:
         return self._model.finalize(

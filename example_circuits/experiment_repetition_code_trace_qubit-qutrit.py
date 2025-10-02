@@ -42,10 +42,10 @@ np.set_printoptions(precision=4, suppress=True)
 noise_file = "setup_noisy.yaml"
 # noise_file = "setup_perfect.yaml"
 
-DISTANCE = 3
+DISTANCE = 5
 
 qec_rounds: int = 10
-repetitions: int = 10  # 10_000
+repetitions: int = 100 #10_000
 state_dim: int = 3
 dim_lookup = {
     "D7": 2,
@@ -105,12 +105,12 @@ elif DISTANCE == 5:
 else:
     raise ValueError(f"Distance {DISTANCE} not implemented.")
 
-"""
 initial_state = construct_initial_state(
     initial_state_type=InitialStateType.ODD,
     ordered_qubits=qubits,
     code_layout=code_layout,
 )
+"""
 initial_circuit = construct_initial_circuit(
     initial_state_type=InitialStateType.ODD,
     ordered_qubits=qubits,
@@ -187,13 +187,14 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
         )
         meas_outcome_indices[i, j] = meas_outcome_index
         if not last_qec_round:
-            meas_project_circuit = current_state_projector.meas_outcome_to_circuit[
+            meas_project_gates = current_state_projector.get_meas_outcome_to_circuit_gates(
                 meas_outcome
-            ]
-            meas_project_circuit @ state
+            )
+            # apply measurement projection
+            for indexedop in meas_project_gates:
+                indices = [qubits.index(q) for q in indexedop.indices]
+                indexedop.operation(state.pauli_vector, *indices)
             state.pauli_vector.renormalize()
-
-kdjflasjfklsjklfjsdklfj
 
 # print(meas_outcome_indices)
 result_tensor = process_state_projection(
