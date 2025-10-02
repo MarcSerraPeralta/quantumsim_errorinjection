@@ -28,6 +28,12 @@ rotate_qt = (
     .at(qubits.index("QT"))
 )
 
+#print(dir(rotate_qt.operation))
+print(np.round(rotate_qt.operation._ptm, decimals=4))
+a = rotate_qt.operation.compile()
+print(a)
+print(np.round(rotate_qt.operation._ptm, decimals=4))
+
 print(rotate_qb)
 print(rotate_qt)
 

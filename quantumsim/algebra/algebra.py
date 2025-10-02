@@ -9,13 +9,13 @@ def bases_kron(bases):
 
 
 def kraus_to_ptm(kraus, bases_in, bases_out):
-    dim = bases_in[0].dim_hilbert
+    dims = [b.dim_hilbert for b in bases_in]
     nq = len(bases_in)
     if nq != len(bases_out):
         raise ValueError(
             "Input and output bases must contain the same number" " of elements"
         )
-    kraus = kraus.reshape([kraus.shape[0]] + [dim] * (2 * nq))
+    kraus = kraus.reshape([kraus.shape[0]] + dims * 2)
     einsum_args = []
     for i, b in enumerate(bases_out):
         einsum_args.append(b.vectors)

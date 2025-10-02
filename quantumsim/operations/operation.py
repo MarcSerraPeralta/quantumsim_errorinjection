@@ -164,14 +164,13 @@ class Operation(metaclass=abc.ABCMeta):
                 "`kraus` should be a 2D or 3D array, got shape {}".format(kraus.shape)
             )
 
-        dim_hilbert = bases_in[0].dim_hilbert
-        num_qubits = len(bases_in)
+        dims = [b.dim_hilbert for b in bases_in]
         kraus_size = kraus.shape[1]
-        if kraus_size != dim_hilbert**num_qubits or kraus_size != kraus.shape[2]:
+        if kraus_size != np.prod(dims) or kraus_size != kraus.shape[2]:
             raise ValueError(
                 "Shape of the Kraus operator for bases provided must be "
                 "{0}x{0}, got {1}x{2} instead".format(
-                    dim_hilbert**num_qubits, kraus.shape[1], kraus.shape[2]
+                    np.prod(dims), kraus.shape[1], kraus.shape[2]
                 )
             )
 
@@ -388,12 +387,12 @@ class Operation(metaclass=abc.ABCMeta):
                     "not match number of qubits in the "
                     "operation ({}).".format(name, len(bases), self.num_qubits)
                 )
-            for b in bases:
-                if self.dim_hilbert != b.dim_hilbert:
+            for k, b in enumerate(bases):
+                if self._dims[k] != b.dim_hilbert:
                     raise ValueError(
                         "Expected bases with Hilbert dimensionality {}, "
                         "but {} has elements with Hilbert dimensionality {}.".format(
-                            self.dim_hilbert, name, b.dim_hilbert
+                            self._dims[k], name, b.dim_hilbert
                         )
                     )
 
@@ -418,6 +417,7 @@ class Placeholder(Operation):
     def __init__(self, bases_in, bases_out=None):
         self._num_qubits = len(bases_in)
         self._dim_hilbert = bases_in[0].dim_hilbert
+        self._dims = [b.dim_hilbert for b in bases_in]
         self._validate_bases(bases_in=bases_in)
         if bases_out is None:
             bases_out = bases_in
@@ -492,6 +492,7 @@ class PTMOperation(Operation):
         self.bases_in = bases_in
         self.bases_out = bases_out
         self._dim_hilbert = bases_in[0].dim_hilbert
+        self._dims = [b.dim_hilbert for b in bases_in]
         self._num_qubits = len(self.bases_in)
         self._validate_bases(bases_out=self.bases_out)
         shape = tuple(b.dim_pauli for b in chain_(self.bases_out, self.bases_in))
