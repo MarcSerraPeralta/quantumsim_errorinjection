@@ -12,7 +12,10 @@ from quantumsim.operations.state_projector import (
     StateProjector,
     fast_choice,
 )
-from quantumsim.utilities.process_state_projection import process_state_projection
+from quantumsim.utilities.process_state_projection import (
+    process_state_projection,
+    process_assignment_errors,
+)
 from quantumsim.utilities.process_error_identifier import (
     error_identifier_to_dataset,
     tensor_to_error_identifier,
@@ -202,6 +205,12 @@ for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
                 indexedop.operation(state.pauli_vector, *indices)
             state.pauli_vector.renormalize()
 
+# Apply assignment errors in bulk
+meas_outcome_indices = process_assignment_errors(
+    meas_outcome_indices=meas_outcome_indices,
+    state_projector=state_projector,
+    final_state_projector=final_state_projector,
+)
 # print(meas_outcome_indices)
 result_tensor = process_state_projection(
     state_projection_array=meas_outcome_indices,
