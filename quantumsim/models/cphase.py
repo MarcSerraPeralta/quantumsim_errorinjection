@@ -69,13 +69,19 @@ def cphase(
             * _ideal_generator_basis23(
                 phase_10=phase_corr_error_10,
                 phase_01=phase_corr_error_01,
-                phase_11=angle,  # rot_angle,
-                phase_02=angle,  # rot_angle,
-                phase_12=phase_diff_02_12,  # - rot_angle,
+                phase_11=rot_angle,
+                phase_02=rot_angle,
+                phase_12=phase_diff_02_12 - rot_angle,
             )
         )
-        print("MISSING NOISE AND INCLUDE ROT_ANGLE!!!!")
-        cz_unitary = ideal_unitary
+        noisy_unitary = expm(
+            1j
+            * _exchange_generator_23(
+                leakage=4 * leakage_rate + qstatic_interf_leakage,
+                leakage_phase=leakage_phase,
+            )
+        )
+        cz_unitary = ideal_unitary @ noisy_unitary
     elif dim1 == 3 and dim2 == 2:
         ideal_unitary = expm(
             1j
@@ -104,7 +110,7 @@ def cphase(
         )
         noisy_unitary = expm(
             1j
-            * _exchange_generator(
+            * _exchange_generator_33(
                 leakage=4 * leakage_rate + qstatic_interf_leakage,
                 leakage_phase=leakage_phase,
                 leakage_mobility_rate=leakage_mobility_rate,
@@ -186,7 +192,7 @@ def _ideal_generator_basis22(phase_01, phase_10, phase_11):
     return generator
 
 
-def _exchange_generator(
+def _exchange_generator_33(
     leakage, leakage_phase, leakage_mobility_rate, leakage_mobility_phase
 ):
     generator = np.zeros((9, 9), dtype=complex)
@@ -202,6 +208,15 @@ def _exchange_generator(
         * np.arcsin(np.sqrt(leakage_mobility_rate))
         * np.exp(-1j * leakage_mobility_phase)
     )
+    return generator
+
+
+def _exchange_generator_23(
+    leakage, leakage_phase
+):
+    generator = np.zeros((6, 6), dtype=complex)
+    generator[2][4] = 1j * np.arcsin(np.sqrt(leakage)) * np.exp(1j * leakage_phase)
+    generator[4][2] = -1j * np.arcsin(np.sqrt(leakage)) * np.exp(-1j * leakage_phase)
     return generator
 
 
