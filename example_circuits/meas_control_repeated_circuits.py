@@ -13,6 +13,10 @@ from quantumsim import Setup
 from quantumsim.states.state import State
 from quantumsim.models import DiCarloLabModel
 from quantumsim.operations.state_projector import StateProjector
+from quantumsim.utilities.process_state_projection import (
+    process_state_projection,
+    process_assignment_errors,
+)
 from qce_circuit.language.intrf_declarative_circuit import (
     InitialStateEnum,
     InitialStateContainer,
@@ -147,7 +151,7 @@ class MeasurementControl:
     # endregion
 
     # region Class Constructor
-    def __init__(self, noise_model: DiCarloLabModel, code_settings: CodeSettings, initial_state_type: InitialStateType = InitialStateType.ODD, state_dim: int = 3):
+    def __init__(self, noise_model: DiCarloLabModel, code_settings: CodeSettings, dim_lookup: Dict[str, int], initial_state_type: InitialStateType = InitialStateType.ODD):
         self._code_settings: CodeSettings = code_settings
         self._noise_model: DiCarloLabModel = noise_model
         self._initial_state_type: InitialStateType = initial_state_type
@@ -173,8 +177,7 @@ class MeasurementControl:
             dim_per_qubit={data: 3 for data in data_qubits},
             model=self._noise_model,
         )
-        self.state_dim = state_dim
-        self._dim_lookup = {q: state_dim for q in self._code_settings.qubits}
+        self._dim_lookup = dim_lookup  # {q: state_dim for q in self._code_settings.qubits}
     # endregion
 
     # region Class Methods
@@ -318,14 +321,25 @@ class MeasurementControl:
                         indices = [qubits.index(q) for q in indexedop.indices]
                         indexedop.operation(state.pauli_vector, *indices)
                     state.pauli_vector.renormalize()
+
         return meas_outcome_indices
 
     def construct_error_identifier(self, cycle_circuit_gates: IGateList, depth: int = 10, repetitions: int = 10, **error_identifier_construction_kwargs) -> ErrorDetectionIdentifier:
         # Construct initial state
-        result_tensor: np.ndarray = self.execute_simulation_loop(
+        meas_outcome_indices: np.ndarray = self.execute_simulation_loop(
             cycle_circuit_gates=cycle_circuit_gates,
             qec_rounds=depth,
             repetitions=repetitions,
+        )
+        assigned_meas_outcome_indices = process_assignment_errors(
+            meas_outcome_indices=meas_outcome_indices,
+            state_projector=self.state_projector,
+            final_state_projector=self.final_state_projector,
+        )
+        result_tensor = process_state_projection(
+            state_projection_array=assigned_meas_outcome_indices,
+            state_projector=self.state_projector,
+            final_state_projector=self.final_state_projector,
         )
         error_identifier: ErrorDetectionIdentifier = self.tensor_to_error_identifier(
             result_tensor=result_tensor,
@@ -368,6 +382,15 @@ class MeasurementControl:
                 ]
             )
         else:
+            gates.extend(
+                [
+                    self._noise_model.random_rotate_x_180("D4", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("Z1", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("D1", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("X1", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("D2", t_start=t_ref, prob=error_probability),
+                ]
+            )
             pass
         t_ref += t_sqg
         # Start of Parities
@@ -459,6 +482,163 @@ class MeasurementControl:
                 self._noise_model.rotate_x_180("D2", t_start=t_ref),
             ]
         )
+        return self._code_settings.qubits, gates
+
+    def construct_distance_5_bitflip_circuit_gates(self, error_probability: float = 0.0, error_coherence: bool = True) -> Tuple[IQubitList, IGateList]:
+        gates = []
+        t_sqg: float = 20
+        t_tqg: float = 60
+        t_ref: float = 0
+        if error_coherence:
+            theta: float = np.rad2deg(2 * np.arcsin(np.sqrt(error_probability)))
+            gates.extend(
+                [
+                    self._noise_model.rotate_x("D7", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("D4", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("D1", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("D2", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("D3", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("Z3", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("Z1", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("X1", t_start=t_ref, theta=theta),
+                    self._noise_model.rotate_x("X2", t_start=t_ref, theta=theta),
+                ]
+            )
+        else:
+            gates.extend(
+                [
+                    self._noise_model.random_rotate_x_180("D7", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("D4", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("D1", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("D2", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("D3", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("Z3", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("Z1", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("X1", t_start=t_ref, prob=error_probability),
+                    self._noise_model.random_rotate_x_180("X2", t_start=t_ref, prob=error_probability),
+                ]
+            )
+            pass
+
+        gates.extend(
+            [
+                model.idle_sq_gate("D7", t_start=t_ref),
+                model.idle_sq_gate("D4", t_start=t_ref),
+                model.idle_sq_gate("D1", t_start=t_ref),
+                model.idle_sq_gate("D2", t_start=t_ref),
+                model.idle_sq_gate("D3", t_start=t_ref),
+                model.rotate_y_90("Z3", t_start=t_ref),
+                model.idle_sq_gate("Z1", t_start=t_ref),
+                model.rotate_y_90("X1", t_start=t_ref),
+                model.idle_sq_gate("X2", t_start=t_ref),
+            ]
+        )
+        t_ref += t_sqg
+
+        gates.extend(
+            [
+                model.idle_tq_gate("D7", t_start=t_ref),
+                model.cphase("Z3", "D4", t_start=t_ref),
+                model.idle_tq_gate("D1", t_start=t_ref),
+                model.cphase("D2", "X1", t_start=t_ref),
+                model.idle_tq_gate("D3", t_start=t_ref),
+                model.idle_tq_gate("Z1", t_start=t_ref),
+                model.idle_tq_gate("X2", t_start=t_ref),
+                model.zz_coupling_2q("Z3", "D7", t_start=t_ref),
+                model.zz_coupling_2q("X1", "D1", t_start=t_ref),
+            ]
+        )
+        t_ref += t_tqg
+
+        gates.extend(
+            [
+                model.cphase("D7", "Z3", t_start=t_ref),
+                model.idle_tq_gate("D4", t_start=t_ref),
+                model.cphase("D1", "X1", t_start=t_ref),
+                model.idle_tq_gate("D2", t_start=t_ref),
+                model.idle_tq_gate("D3", t_start=t_ref),
+                model.idle_tq_gate("Z1", t_start=t_ref),
+                model.idle_tq_gate("X2", t_start=t_ref),
+                model.zz_coupling_2q("Z3", "D4", t_start=t_ref),
+                model.zz_coupling_2q("X1", "D2", t_start=t_ref),
+            ]
+        )
+        t_ref += t_tqg
+
+        gates.extend(
+            [
+                model.idle_sq_gate("D7", t_start=t_ref),
+                model.idle_sq_gate("D4", t_start=t_ref),
+                model.idle_sq_gate("D1", t_start=t_ref),
+                model.idle_sq_gate("D2", t_start=t_ref),
+                model.idle_sq_gate("D3", t_start=t_ref),
+                model.rotate_y_m90("Z3", t_start=t_ref),
+                model.rotate_y_90("Z1", t_start=t_ref),
+                model.rotate_y_m90("X1", t_start=t_ref),
+                model.rotate_y_90("X2", t_start=t_ref),
+            ]
+        )
+        t_ref += t_sqg
+
+        gates.extend(
+            [
+                model.idle_tq_gate("D7", t_start=t_ref),
+                model.cphase("Z1", "D4", t_start=t_ref),
+                model.idle_tq_gate("D1", t_start=t_ref),
+                model.cphase("D2", "X2", t_start=t_ref),
+                model.idle_tq_gate("D3", t_start=t_ref),
+                model.idle_tq_gate("Z3", t_start=t_ref),
+                model.idle_tq_gate("X1", t_start=t_ref),
+                model.zz_coupling_2q("Z1", "D1", t_start=t_ref),
+                model.zz_coupling_2q("X2", "D3", t_start=t_ref),
+            ]
+        )
+        t_ref += t_tqg
+
+        gates.extend(
+            [
+                model.idle_tq_gate("D7", t_start=t_ref),
+                model.idle_tq_gate("D4", t_start=t_ref),
+                model.cphase("D1", "Z1", t_start=t_ref),
+                model.idle_tq_gate("D2", t_start=t_ref),
+                model.cphase("D3", "X2", t_start=t_ref),
+                model.idle_tq_gate("Z3", t_start=t_ref),
+                model.idle_tq_gate("X1", t_start=t_ref),
+                model.zz_coupling_2q("Z1", "D4", t_start=t_ref),
+                model.zz_coupling_2q("X2", "D2", t_start=t_ref),
+            ]
+        )
+        t_ref += t_tqg
+
+        gates.extend(
+            [
+                model.idle_sq_gate("D7", t_start=t_ref),
+                model.idle_sq_gate("D4", t_start=t_ref),
+                model.idle_sq_gate("D1", t_start=t_ref),
+                model.idle_sq_gate("D2", t_start=t_ref),
+                model.idle_sq_gate("D3", t_start=t_ref),
+                model.idle_sq_gate("Z3", t_start=t_ref),
+                model.rotate_y_m90("Z1", t_start=t_ref),
+                model.idle_sq_gate("X1", t_start=t_ref),
+                model.rotate_y_m90("X2", t_start=t_ref),
+            ]
+        )
+        t_ref += t_sqg
+
+        gates.extend(
+            [
+                model.rotate_x_180("D7", t_start=t_ref),
+                model.rotate_x_180("D4", t_start=t_ref),
+                model.rotate_x_180("D1", t_start=t_ref),
+                model.rotate_x_180("D2", t_start=t_ref),
+                model.rotate_x_180("D3", t_start=t_ref),
+                model.idle_sq_gate("Z3", t_start=t_ref),
+                model.idle_sq_gate("Z1", t_start=t_ref),
+                model.idle_sq_gate("X1", t_start=t_ref),
+                model.idle_sq_gate("X2", t_start=t_ref),
+            ]
+        )
+
         return self._code_settings.qubits, gates
     # endregion
 
@@ -815,22 +995,24 @@ if __name__ == '__main__':
 
     meas_ctrl = MeasurementControl(
         noise_model=model,
-        code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3)
+        code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_5),
+        dim_lookup=dim_lookup,
     )
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
+    repetitions = 10
     error_probabilities = np.linspace(0.0, 0.1, 2)
     list_of_datasets: List[xr.Dataset] = []
     for i, error_probability in enumerate(error_probabilities):
-        involved_qubits, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates(
+        involved_qubits, gates = meas_ctrl.construct_distance_5_bitflip_circuit_gates(
             error_probability=float(error_probability),
             error_coherence=True,
         )
         error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
             cycle_circuit_gates=gates,
             depth=qec_rounds,
-            repetitions=10_000,
+            repetitions=repetitions,
         )
 
         dataset = meas_ctrl.construct_dataset(
@@ -842,16 +1024,47 @@ if __name__ == '__main__':
         list_of_datasets.append(dataset)
 
         # print(dataset)
-        # meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_p{i}-{len(error_probabilities)}.nc", overwrite=True)
-        fig, ax = plot_all_defect_rate(
-            error_identifier=error_identifier,
-            included_rounds=qec_rounds,
+        meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d5_p{i}-{len(error_probabilities)}_coherent.nc", overwrite=True)
+        # fig, ax = plot_all_defect_rate(
+        #     error_identifier=error_identifier,
+        #     included_rounds=qec_rounds,
+        # )
+
+    # Concatenate along a new, unnamed dimension
+    combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
+    # Assign the coordinate values to the new dimension
+    combined_stepwise.coords["error_probability"] = error_probabilities
+    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d5_coherent_stacked.nc", overwrite=True)
+
+    list_of_datasets: List[xr.Dataset] = []
+    for i, error_probability in enumerate(error_probabilities):
+        involved_qubits, gates = meas_ctrl.construct_distance_5_bitflip_circuit_gates(
+            error_probability=float(error_probability),
+            error_coherence=False,
+        )
+        error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
+            cycle_circuit_gates=gates,
+            depth=qec_rounds,
+            repetitions=repetitions,
         )
 
-    # # Concatenate along a new, unnamed dimension
-    # combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
-    # # Assign the coordinate values to the new dimension
-    # combined_stepwise.coords["error_probability"] = error_probabilities
-    # meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_stacked.nc", overwrite=True)
+        dataset = meas_ctrl.construct_dataset(
+            error_identifier=error_identifier,
+            noise_file_path=ROOT_DIR / noise_file,
+        )
+        dataset.attrs["error_probability"] = error_probability
+        dataset.attrs["error_coherence"] = False
+        list_of_datasets.append(dataset)
 
-    plt.show()
+        # print(dataset)
+        meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d5_p{i}-{len(error_probabilities)}_stochastic.nc", overwrite=True)
+        # fig, ax = plot_all_defect_rate(
+        #     error_identifier=error_identifier,
+        #     included_rounds=qec_rounds,
+        # )
+
+    # Concatenate along a new, unnamed dimension
+    combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
+    # Assign the coordinate values to the new dimension
+    combined_stepwise.coords["error_probability"] = error_probabilities
+    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d5_stochastic_stacked.nc", overwrite=True)

@@ -178,17 +178,21 @@ class DiCarloLabModel(Model):
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    def rotate_x(self, qubit, t_start=None):
+    def rotate_x(self, qubit, theta: float = 0.0, t_start=None, *args, **kwargs):
         """Microwave rotation around X axis. Parameters: `theta` (degrees)."""
         t1 = self.p("T1", qubit)
         t2 = self.p("T2", qubit)
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ParametrizedOperation(
-                lambda theta: self.ops_lookup[qubit].rotate_x(rad(theta)),
-                self.basis_lookup[qubit],
-            ),
+            self.ops_lookup[qubit]
+            .rotate_x(rad(theta))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
+            # ParametrizedOperation(
+            #     lambda theta: self.ops_lookup[qubit].rotate_x(rad(theta)),
+            #     self.basis_lookup[qubit],
+            # ),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -228,6 +232,10 @@ class DiCarloLabModel(Model):
             .random_rotate_x(rad(180), prob=prob)
             .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
             .at(qubit),
+            # ParametrizedOperation(
+            #     lambda prob: self.ops_lookup[qubit].random_rotate_x(rad(180), prob=prob),
+            #     self.basis_lookup[qubit],
+            # ),
             self._idle(qubit, half_duration, t1, t2),
         )
 
