@@ -1,8 +1,11 @@
 import os
 from dataclasses import dataclass
-from typing import List, Optional, Any
+from itertools import chain, product
+from typing import List, Optional, Any, Tuple, Dict
 import xarray as xr
 import numpy as np
+from numpy.typing import NDArray
+from tqdm import tqdm
 from pathlib import Path
 from enum import Enum, unique, auto
 from quantumsim.circuits import Circuit, FinalizedCircuit
@@ -54,6 +57,14 @@ from qce_interp.interface_definitions.intrf_state_classification import (
     ParityType,
 )
 from quantumsim.operations.repetition_tree import LazyTreeCircuitEvaluation, RepeatedCircuitEvaluation
+from quantumsim.utilities.process_initial_circuit import (
+    RepetitionCodeDistance3,
+    RepetitionCodeDistance5,
+)
+
+
+IQubitList = List[str]
+IGateList = List[Any]
 
 
 @unique
@@ -68,149 +79,6 @@ class InitialStateType(Enum):
     ALL_ONES = auto()
     EVEN = auto()
     ODD = auto()
-
-
-class RepetitionCodeDistance3(
-    GenericSurfaceCode, IGenericSurfaceCodeLayer, metaclass=SingletonABCMeta
-):
-
-    # region Class Constructor
-    def __init__(self):
-        super().__init__(
-            gate_sequences=[
-                GateSequenceLayer(
-                    _park_operations=[
-                        Operation.type_park(QubitIDObj("D1")),
-                    ],
-                    _gate_operations=[
-                        Operation.type_gate(
-                            EdgeIDObj(QubitIDObj("X1"), QubitIDObj("D2"))
-                        ),
-                    ],
-                ),
-                GateSequenceLayer(
-                    _park_operations=[
-                        Operation.type_park(QubitIDObj("D2")),
-                    ],
-                    _gate_operations=[
-                        Operation.type_gate(
-                            EdgeIDObj(QubitIDObj("X1"), QubitIDObj("D1"))
-                        ),
-                    ],
-                ),
-                GateSequenceLayer(
-                    _park_operations=[
-                        Operation.type_park(QubitIDObj("D2")),
-                    ],
-                    _gate_operations=[
-                        Operation.type_gate(
-                            EdgeIDObj(QubitIDObj("Z1"), QubitIDObj("D1"))
-                        ),
-                    ],
-                ),
-                GateSequenceLayer(
-                    _park_operations=[
-                        Operation.type_park(QubitIDObj("Z3")),
-                        Operation.type_park(QubitIDObj("X3")),
-                    ],
-                    _gate_operations=[
-                        Operation.type_gate(
-                            EdgeIDObj(QubitIDObj("D4"), QubitIDObj("Z1"))
-                        ),
-                    ],
-                ),
-            ],
-            parity_group_z=[
-                ParityGroup(
-                    _parity_type=StabilizerType.STABILIZER_Z,
-                    _ancilla_qubit=QubitIDObj("X1"),
-                    _data_qubits=[QubitIDObj("D1"), QubitIDObj("D2")],
-                ),
-                ParityGroup(
-                    _parity_type=StabilizerType.STABILIZER_Z,
-                    _ancilla_qubit=QubitIDObj("Z1"),
-                    _data_qubits=[QubitIDObj("D4"), QubitIDObj("D1")],
-                ),
-            ],
-            parity_group_x=[],
-        )
-
-    # endregion
-
-
-class RepetitionCodeDistance5(
-    GenericSurfaceCode, IGenericSurfaceCodeLayer, metaclass=SingletonABCMeta
-):
-    # region Class Constructor
-    def __init__(self):
-        super().__init__(
-            gate_sequences=[
-                GateSequenceLayer(
-                    _park_operations=[
-                        Operation.type_park(QubitIDObj('D1')),
-                        Operation.type_park(QubitIDObj('Z1')),
-                        Operation.type_park(QubitIDObj('X3')),
-                    ],
-                    _gate_operations=[
-                        Operation.type_gate(EdgeIDObj(QubitIDObj('X1'), QubitIDObj('D2'))),
-                        Operation.type_gate(EdgeIDObj(QubitIDObj('Z3'), QubitIDObj('D4'))),
-                    ],
-                ),
-                GateSequenceLayer(
-                    _park_operations=[
-                        Operation.type_park(QubitIDObj('D2')),
-                    ],
-                    _gate_operations=[
-                        Operation.type_gate(EdgeIDObj(QubitIDObj('X1'), QubitIDObj('D1'))),
-                        Operation.type_gate(EdgeIDObj(QubitIDObj('Z3'), QubitIDObj('D7'))),
-                    ],
-                ),
-                GateSequenceLayer(
-                    _park_operations=[
-                        Operation.type_park(QubitIDObj('Z3')),
-                        Operation.type_park(QubitIDObj('X3')),
-                        Operation.type_park(QubitIDObj('D3')),
-                    ],
-                    _gate_operations=[
-                        Operation.type_gate(EdgeIDObj(QubitIDObj('D4'), QubitIDObj('Z1'))),
-                        Operation.type_gate(EdgeIDObj(QubitIDObj('X2'), QubitIDObj('D2'))),
-                    ],
-                ),
-                GateSequenceLayer(
-                    _park_operations=[
-                        Operation.type_park(QubitIDObj('D2')),
-                    ],
-                    _gate_operations=[
-                        Operation.type_gate(EdgeIDObj(QubitIDObj('Z1'), QubitIDObj('D1'))),
-                        Operation.type_gate(EdgeIDObj(QubitIDObj('X2'), QubitIDObj('D3'))),
-                    ],
-                ),
-            ],
-            parity_group_z=[
-                ParityGroup(
-                    _parity_type=StabilizerType.STABILIZER_Z,
-                    _ancilla_qubit=QubitIDObj('X2'),
-                    _data_qubits=[QubitIDObj('D2'), QubitIDObj('D3')]
-                ),
-                ParityGroup(
-                    _parity_type=StabilizerType.STABILIZER_Z,
-                    _ancilla_qubit=QubitIDObj('X1'),
-                    _data_qubits=[QubitIDObj('D1'), QubitIDObj('D2')]
-                ),
-                ParityGroup(
-                    _parity_type=StabilizerType.STABILIZER_Z,
-                    _ancilla_qubit=QubitIDObj('Z1'),
-                    _data_qubits=[QubitIDObj('D4'), QubitIDObj('D1')]
-                ),
-                ParityGroup(
-                    _parity_type=StabilizerType.STABILIZER_Z,
-                    _ancilla_qubit=QubitIDObj('Z3'),
-                    _data_qubits=[QubitIDObj('D4'), QubitIDObj('D7')]
-                ),
-            ],
-            parity_group_x=[],
-        )
-    # endregion
 
 
 @dataclass(frozen=True)
@@ -270,8 +138,8 @@ class MeasurementControl:
         return self._final_state_projector
 
     @property
-    def initial_circuit(self) -> FinalizedCircuit:
-        return self.construct_initial_circuit(self._initial_state_type)
+    def initial_circuit_gates(self) -> List[Any]:
+        return self.construct_initial_circuit_gates(self._initial_state_type)
 
     @property
     def initial_state(self) -> InitialStateContainer:
@@ -306,20 +174,18 @@ class MeasurementControl:
             model=self._noise_model,
         )
         self.state_dim = state_dim
+        self._dim_lookup = {q: state_dim for q in self._code_settings.qubits}
     # endregion
 
     # region Class Methods
-    def construct_initial_circuit(self, initial_state_type: InitialStateType) -> FinalizedCircuit:
+    def construct_initial_circuit_gates(self, initial_state_type: InitialStateType) -> List[Any]:
         gates = []
         t_ref: float = 0
         # All zero (Even) initial state
         if initial_state_type in [InitialStateType.ALL_ZERO, InitialStateType.EVEN]:
             for qubit in self._code_settings.qubits:
                 gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
-            return self._noise_model.finalize(Circuit(
-                qubits=self._code_settings.qubits,
-                gates=gates,
-            ))
+            return gates
         # All ones initial state
         if initial_state_type == InitialStateType.ALL_ONES:
             for qubit in self._code_settings.qubits:
@@ -328,10 +194,7 @@ class MeasurementControl:
                 else:
                     gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
 
-            return self._noise_model.finalize(Circuit(
-                qubits=self._code_settings.qubits,
-                gates=gates,
-            ))
+            return gates
         # Odd initial state
         if initial_state_type == InitialStateType.ODD:
             data_qubit_count: int = 0
@@ -344,10 +207,7 @@ class MeasurementControl:
                     data_qubit_count += 1
                 else:
                     gates.append(self._noise_model.idle_sq_gate(qubit, t_start=t_ref))
-            return self._noise_model.finalize(Circuit(
-                qubits=self._code_settings.qubits,
-                gates=gates,
-            ))
+            return gates
         raise NotImplementedError(f"Initial state type ({initial_state_type.name}) not yet supported.")
 
     def construct_initial_state(self, initial_state_type: InitialStateType) -> InitialStateContainer:
@@ -382,22 +242,90 @@ class MeasurementControl:
             )
         raise NotImplementedError(f"Initial state type ({initial_state_type.name}) not yet supported.")
 
-    def construct_error_identifier(self, cycle_circuit: Circuit, depth: int = 10, repetitions: int = 10, **error_identifier_construction_kwargs) -> ErrorDetectionIdentifier:
-        # Construct initial state
-        state = State(self._code_settings.qubits, dim=self.state_dim, force=False)  # initialization in ground state
-        _ = self.initial_circuit @ state
+    def execute_simulation_loop(self, cycle_circuit_gates: IGateList, qec_rounds: int = 10, repetitions: int = 10):
+        # flatten gate list
+        init_gates = list(chain(*self.initial_circuit_gates))
+        qec_gates = list(chain(*cycle_circuit_gates))
+        qubits: IQubitList = self._code_settings.qubits
+        dim_lookup: Dict[str, int] = self._dim_lookup
 
-        repetition_tree = LazyTreeCircuitEvaluation(
-            initial_state=state,
-            circuit=self._noise_model.finalize(cycle_circuit),
-            state_projector=self.state_projector,
-            final_state_projector=self.final_state_projector,
-            max_depth=depth,
+        meas_outcome_indices: NDArray[int] = np.zeros(
+            shape=(
+                repetitions,
+                qec_rounds + 1,  # +1 for data-qubit measurement storage
+            ),
+            dtype=int,
         )
-        result_tensor: np.ndarray = repetition_tree.evaluate_as_array(
-            depth=depth,
+
+        # Populate measurement outcome indices
+        for i in tqdm(range(repetitions), desc="Iterate Repetitions", disable=False):
+            state: State = State(
+                qubits, dim_lookup=dim_lookup, force=True
+            )  # initialization in ground state
+
+            # apply init gates
+            for indexedop in init_gates:
+                indices = [qubits.index(q) for q in indexedop.indices]
+                indexedop.operation(state.pauli_vector, *indices)
+
+            # Iterate through qec-cycles
+            for j in range(qec_rounds + 1):
+                outcomes = []
+                last_qec_round: bool = j == qec_rounds
+
+                # Determine state projector (round dependent)
+                current_state_projector = self.final_state_projector
+                if not last_qec_round:
+                    # apply QEC cycle gates
+                    for indexedop in qec_gates:
+                        indices = [qubits.index(q) for q in indexedop.indices]
+                        indexedop.operation(state.pauli_vector, *indices)
+                    current_state_projector = self.state_projector
+
+                # extract ancilla outcome probabilities from the diagonal
+                probs = state.pauli_vector.diagonal()
+                probs = np.clip(probs, 0.0, 1.0)
+                probs /= np.sum(probs)
+                # fake outcomes, as not all qubits are measured
+                list_outcomes = list(product(*[list(range(dim_lookup[q])) for q in qubits]))
+                outcome_idx = np.random.choice(len(list_outcomes), p=probs)
+                outcome = list_outcomes[outcome_idx]
+                # 'trace out' all the non-measured qubits
+                outcome = [
+                    o
+                    for q, o in zip(qubits, outcome)
+                    if q in current_state_projector.ordered_measured_qubit_ids
+                ]
+                outcomes += outcome
+
+                # update state from sampled outcomes
+                meas_outcome = "".join(
+                    map(
+                        str,
+                        outcomes[-len(current_state_projector.ordered_measured_qubit_ids):],
+                    )
+                )
+                meas_outcome_index: int = (
+                    current_state_projector.output_state_vector_keys.index(meas_outcome)
+                )
+                meas_outcome_indices[i, j] = meas_outcome_index
+                if not last_qec_round:
+                    meas_project_gates = (
+                        current_state_projector.get_meas_outcome_to_circuit_gates(meas_outcome)
+                    )
+                    # apply measurement projection
+                    for indexedop in meas_project_gates:
+                        indices = [qubits.index(q) for q in indexedop.indices]
+                        indexedop.operation(state.pauli_vector, *indices)
+                    state.pauli_vector.renormalize()
+        return meas_outcome_indices
+
+    def construct_error_identifier(self, cycle_circuit_gates: IGateList, depth: int = 10, repetitions: int = 10, **error_identifier_construction_kwargs) -> ErrorDetectionIdentifier:
+        # Construct initial state
+        result_tensor: np.ndarray = self.execute_simulation_loop(
+            cycle_circuit_gates=cycle_circuit_gates,
+            qec_rounds=depth,
             repetitions=repetitions,
-            verbose=True,
         )
         error_identifier: ErrorDetectionIdentifier = self.tensor_to_error_identifier(
             result_tensor=result_tensor,
@@ -421,7 +349,7 @@ class MeasurementControl:
             )
         return dataset
 
-    def construct_distance_3_bitflip_circuit(self, error_probability: float = 0.0, error_coherence: bool = True) -> Circuit:
+    def construct_distance_3_bitflip_circuit_gates(self, error_probability: float = 0.0, error_coherence: bool = True) -> Tuple[IQubitList, IGateList]:
         gates = []
         t_sqg: float = 20
         t_tqg: float = 60
@@ -531,15 +459,12 @@ class MeasurementControl:
                 self._noise_model.rotate_x_180("D2", t_start=t_ref),
             ]
         )
-        return Circuit(
-            qubits=self._code_settings.qubits,
-            gates=gates,
-        )
+        return self._code_settings.qubits, gates
     # endregion
 
     # region Static Class Methods
     @staticmethod
-    def construct_detector_only_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+    def construct_detector_only_circuit_gates(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Tuple[IQubitList, IGateList]:
         gates = []
         t_sqg: float = 20
         t_tqg: float = 60
@@ -575,13 +500,10 @@ class MeasurementControl:
                 zz_gates.append(noise_model.idle_tq_gate(qubit_id.id, t_start=t_ref))
             gates.extend(zz_gates)
             t_ref += t_tqg
-        return Circuit(
-            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
-            gates=gates,
-        )
+        return [parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids], gates
 
     @staticmethod
-    def construct_detector_inverse_parity_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+    def construct_detector_inverse_parity_circuit_gates(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Tuple[IQubitList, IGateList]:
         gates = []
         t_sqg: float = 20
         t_tqg: float = 60
@@ -617,13 +539,10 @@ class MeasurementControl:
                 zz_gates.append(noise_model.idle_tq_gate(qubit_id.id, t_start=t_ref))
             gates.extend(zz_gates)
             t_ref += t_tqg
-        return Circuit(
-            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
-            gates=gates,
-        )
+        return [parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids], gates
 
     @staticmethod
-    def construct_decoherence_only_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+    def construct_decoherence_only_circuit_gates(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Tuple[IQubitList, IGateList]:
         gates = []
         t_sqg: float = 20
         t_tqg: float = 60
@@ -659,13 +578,10 @@ class MeasurementControl:
             ]
         )
         t_ref += t_sqg
-        return Circuit(
-            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
-            gates=gates,
-        )
+        return [parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids], gates
 
     @staticmethod
-    def construct_relaxation_data_constant_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+    def construct_relaxation_data_constant_circuit_gates(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Tuple[IQubitList, IGateList]:
         gates = []
         t_sqg: float = 20
         t_tqg: float = 60
@@ -701,13 +617,10 @@ class MeasurementControl:
             ]
         )
         t_ref += t_sqg
-        return Circuit(
-            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
-            gates=gates,
-        )
+        return [parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids], gates
 
     @staticmethod
-    def construct_parity_circuit(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Circuit:
+    def construct_parity_circuit_args(noise_model: DiCarloLabModel, parity_group: IParityGroup, code_layout: ISurfaceCodeLayer) -> Tuple[IQubitList, IGateList]:
         gates = []
         t_sqg: float = 20
         t_tqg: float = 60
@@ -748,10 +661,7 @@ class MeasurementControl:
             ]
         )
         t_ref += t_sqg
-        return Circuit(
-            qubits=[parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids],
-            gates=gates,
-        )
+        return [parity_group.ancilla_id.id] + [qubit_id.id for qubit_id in parity_group.data_ids], gates
 
     @staticmethod
     def tensor_to_error_identifier(
@@ -886,7 +796,22 @@ if __name__ == '__main__':
     current_dir = os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR = Path(os.path.join(current_dir, ".."))
     setup = Setup.from_file(os.path.join(ROOT_DIR, noise_file))
-    model = DiCarloLabModel(setup=setup)
+    state_dim: int = 3
+    dim_lookup = {
+        "D7": 2,
+        "Z3": state_dim,
+        "D4": state_dim,
+        "Z1": state_dim,
+        "D1": 2,
+        "X1": state_dim,
+        "D2": 2,
+        "X2": state_dim,
+        "D3": 2,
+    }
+    model = DiCarloLabModel(
+        setup=setup,
+        dim_lookup=dim_lookup,
+    )
 
     meas_ctrl = MeasurementControl(
         noise_model=model,
@@ -895,14 +820,15 @@ if __name__ == '__main__':
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    error_probabilities = np.linspace(0.0, 0.1, 5)
+    error_probabilities = np.linspace(0.0, 0.1, 2)
     list_of_datasets: List[xr.Dataset] = []
     for i, error_probability in enumerate(error_probabilities):
+        involved_qubits, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates(
+            error_probability=float(error_probability),
+            error_coherence=True,
+        )
         error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
-            cycle_circuit=meas_ctrl.construct_distance_3_bitflip_circuit(
-                error_probability=float(error_probability),
-                error_coherence=True,
-            ),
+            cycle_circuit_gates=gates,
             depth=qec_rounds,
             repetitions=10_000,
         )
@@ -917,15 +843,15 @@ if __name__ == '__main__':
 
         # print(dataset)
         # meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_p{i}-{len(error_probabilities)}.nc", overwrite=True)
-        # fig, ax = plot_all_defect_rate(
-        #     error_identifier=error_identifier,
-        #     included_rounds=qec_rounds,
-        # )
+        fig, ax = plot_all_defect_rate(
+            error_identifier=error_identifier,
+            included_rounds=qec_rounds,
+        )
 
-    # Concatenate along a new, unnamed dimension
-    combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
-    # Assign the coordinate values to the new dimension
-    combined_stepwise.coords["error_probability"] = error_probabilities
-    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_stacked.nc", overwrite=True)
+    # # Concatenate along a new, unnamed dimension
+    # combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
+    # # Assign the coordinate values to the new dimension
+    # combined_stepwise.coords["error_probability"] = error_probabilities
+    # meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_stacked.nc", overwrite=True)
 
-    # plt.show()
+    plt.show()
