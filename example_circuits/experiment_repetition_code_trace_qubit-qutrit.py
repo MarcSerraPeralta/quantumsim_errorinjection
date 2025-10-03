@@ -19,6 +19,7 @@ from quantumsim.utilities.process_state_projection import (
 from quantumsim.utilities.process_error_identifier import (
     error_identifier_to_dataset,
     tensor_to_error_identifier,
+    save_dataset_to_netcdf,
 )
 from quantumsim.utilities.process_initial_circuit import (
     RepetitionCodeDistance3,
@@ -45,10 +46,10 @@ np.set_printoptions(precision=4, suppress=True)
 noise_file = "setup_noisy.yaml"
 # noise_file = "setup_perfect.yaml"
 
-DISTANCE = 3
+DISTANCE = 5
 
 qec_rounds: int = 10
-repetitions: int = 1_000
+repetitions: int = 10_000
 state_dim: int = 3
 dim_lookup = {
     "D7": 2,
@@ -109,7 +110,7 @@ else:
     raise ValueError(f"Distance {DISTANCE} not implemented.")
 
 initial_state = construct_initial_state(
-    initial_state_type=InitialStateType.ODD,
+    initial_state_type=InitialStateType.EVEN,
     ordered_qubits=qubits,
     code_layout=code_layout,
 )
@@ -233,8 +234,11 @@ dataset = error_identifier_to_dataset(
     noise_config_string="",
 )
 # print(dataset)
+# from pathlib import Path
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# ROOT_DIR = Path(os.path.join(current_dir, ".."))
 # common_path: Path = ROOT_DIR / "simulated_datasets"
-# save_dataset_to_netcdf(dataset, common_path / "defect_rate_d3.nc", overwrite=True)
+# save_dataset_to_netcdf(dataset, common_path / "defect_rate_d5.nc", overwrite=True)
 
 fig, ax = plot_all_defect_rate(
     error_identifier=error_identifier,

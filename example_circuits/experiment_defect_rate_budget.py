@@ -18,11 +18,24 @@ if __name__ == '__main__':
     )
     import matplotlib.pyplot as plt
 
+    state_dim: int = 3
+    dim_lookup = {
+        "D7": state_dim,
+        "Z3": state_dim,
+        "D4": state_dim,
+        "Z1": state_dim,
+        "D1": state_dim,
+        "X1": state_dim,
+        "D2": state_dim,
+        "X2": state_dim,
+        "D3": state_dim,
+    }
+
     noise_file = "setup_noisy.yaml"
     current_dir = os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR = Path(os.path.join(current_dir, ".."))
     setup = Setup.from_file(os.path.join(ROOT_DIR, noise_file))
-    model = DiCarloLabModel(setup=setup)
+    model = DiCarloLabModel(setup=setup, dim_lookup=dim_lookup)
 
     code_layout: ISurfaceCodeLayer = RepetitionCodeDistance5()
     parity_group: IParityGroup = code_layout.get_parity_group(element=QubitIDObj("Z1"))[0]

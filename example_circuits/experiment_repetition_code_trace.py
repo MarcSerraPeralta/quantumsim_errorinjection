@@ -51,15 +51,15 @@ qec_rounds: int = 10
 repetitions: int = 10_000
 state_dim: int = 3
 dim_lookup = {
-    "D7": state_dim,  # 2,
+    "D7": 2,  # 2,
     "Z3": state_dim,
     "D4": state_dim,
     "Z1": state_dim,
-    "D1": state_dim,  # 2,
+    "D1": 2,  # 2,
     "X1": state_dim,
-    "D2": state_dim,  # 2,
+    "D2": 2,  # 2,
     "X2": state_dim,
-    "D3": state_dim,  # 2,
+    "D3": 2,  # 2,
 }
 
 
@@ -86,13 +86,13 @@ model = DiCarloLabModel(
 state_projector = StateProjector(
     ordered_qubit_ids=qubits,
     meas_qubit_ids=anc_qubits,
-    dim_per_qubit={anc: state_dim for anc in anc_qubits},
+    dim_per_qubit={anc: dim_lookup[anc] for anc in anc_qubits},
     model=model,
 )
 final_state_projector = StateProjector(
     ordered_qubit_ids=qubits,
     meas_qubit_ids=data_qubits,
-    dim_per_qubit={data: state_dim for data in data_qubits},
+    dim_per_qubit={data: dim_lookup[data] for data in data_qubits},
     model=model,
 )
 
