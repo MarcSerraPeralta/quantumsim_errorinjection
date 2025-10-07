@@ -522,120 +522,120 @@ class MeasurementControl:
 
         gates.extend(
             [
-                model.idle_sq_gate("D7", t_start=t_ref),
-                model.idle_sq_gate("D4", t_start=t_ref),
-                model.idle_sq_gate("D1", t_start=t_ref),
-                model.idle_sq_gate("D2", t_start=t_ref),
-                model.idle_sq_gate("D3", t_start=t_ref),
-                model.rotate_y_90("Z3", t_start=t_ref),
-                model.idle_sq_gate("Z1", t_start=t_ref),
-                model.rotate_y_90("X1", t_start=t_ref),
-                model.idle_sq_gate("X2", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D7", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D4", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D1", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D2", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D3", t_start=t_ref),
+                self._noise_model.rotate_y_90("Z3", t_start=t_ref),
+                self._noise_model.idle_sq_gate("Z1", t_start=t_ref),
+                self._noise_model.rotate_y_90("X1", t_start=t_ref),
+                self._noise_model.idle_sq_gate("X2", t_start=t_ref),
             ]
         )
         t_ref += t_sqg
 
         gates.extend(
             [
-                model.idle_tq_gate("D7", t_start=t_ref),
-                model.cphase("Z3", "D4", t_start=t_ref),
-                model.idle_tq_gate("D1", t_start=t_ref),
-                model.cphase("D2", "X1", t_start=t_ref),
-                model.idle_tq_gate("D3", t_start=t_ref),
-                model.idle_tq_gate("Z1", t_start=t_ref),
-                model.idle_tq_gate("X2", t_start=t_ref),
-                model.zz_coupling_2q("Z3", "D7", t_start=t_ref),
-                model.zz_coupling_2q("X1", "D1", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D7", t_start=t_ref),
+                self._noise_model.cphase("Z3", "D4", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D1", t_start=t_ref),
+                self._noise_model.cphase("D2", "X1", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D3", t_start=t_ref),
+                self._noise_model.idle_tq_gate("Z1", t_start=t_ref),
+                self._noise_model.idle_tq_gate("X2", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("Z3", "D7", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("X1", "D1", t_start=t_ref),
             ]
         )
         t_ref += t_tqg
 
         gates.extend(
             [
-                model.cphase("D7", "Z3", t_start=t_ref),
-                model.idle_tq_gate("D4", t_start=t_ref),
-                model.cphase("D1", "X1", t_start=t_ref),
-                model.idle_tq_gate("D2", t_start=t_ref),
-                model.idle_tq_gate("D3", t_start=t_ref),
-                model.idle_tq_gate("Z1", t_start=t_ref),
-                model.idle_tq_gate("X2", t_start=t_ref),
-                model.zz_coupling_2q("Z3", "D4", t_start=t_ref),
-                model.zz_coupling_2q("X1", "D2", t_start=t_ref),
+                self._noise_model.cphase("D7", "Z3", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D4", t_start=t_ref),
+                self._noise_model.cphase("D1", "X1", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D2", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D3", t_start=t_ref),
+                self._noise_model.idle_tq_gate("Z1", t_start=t_ref),
+                self._noise_model.idle_tq_gate("X2", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("Z3", "D4", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("X1", "D2", t_start=t_ref),
             ]
         )
         t_ref += t_tqg
 
         gates.extend(
             [
-                model.idle_sq_gate("D7", t_start=t_ref),
-                model.idle_sq_gate("D4", t_start=t_ref),
-                model.idle_sq_gate("D1", t_start=t_ref),
-                model.idle_sq_gate("D2", t_start=t_ref),
-                model.idle_sq_gate("D3", t_start=t_ref),
-                model.rotate_y_m90("Z3", t_start=t_ref),
-                model.rotate_y_90("Z1", t_start=t_ref),
-                model.rotate_y_m90("X1", t_start=t_ref),
-                model.rotate_y_90("X2", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D7", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D4", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D1", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D2", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D3", t_start=t_ref),
+                self._noise_model.rotate_y_m90("Z3", t_start=t_ref),
+                self._noise_model.rotate_y_90("Z1", t_start=t_ref),
+                self._noise_model.rotate_y_m90("X1", t_start=t_ref),
+                self._noise_model.rotate_y_90("X2", t_start=t_ref),
             ]
         )
         t_ref += t_sqg
 
         gates.extend(
             [
-                model.idle_tq_gate("D7", t_start=t_ref),
-                model.cphase("Z1", "D4", t_start=t_ref),
-                model.idle_tq_gate("D1", t_start=t_ref),
-                model.cphase("D2", "X2", t_start=t_ref),
-                model.idle_tq_gate("D3", t_start=t_ref),
-                model.idle_tq_gate("Z3", t_start=t_ref),
-                model.idle_tq_gate("X1", t_start=t_ref),
-                model.zz_coupling_2q("Z1", "D1", t_start=t_ref),
-                model.zz_coupling_2q("X2", "D3", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D7", t_start=t_ref),
+                self._noise_model.cphase("Z1", "D4", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D1", t_start=t_ref),
+                self._noise_model.cphase("D2", "X2", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D3", t_start=t_ref),
+                self._noise_model.idle_tq_gate("Z3", t_start=t_ref),
+                self._noise_model.idle_tq_gate("X1", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("Z1", "D1", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("X2", "D3", t_start=t_ref),
             ]
         )
         t_ref += t_tqg
 
         gates.extend(
             [
-                model.idle_tq_gate("D7", t_start=t_ref),
-                model.idle_tq_gate("D4", t_start=t_ref),
-                model.cphase("D1", "Z1", t_start=t_ref),
-                model.idle_tq_gate("D2", t_start=t_ref),
-                model.cphase("D3", "X2", t_start=t_ref),
-                model.idle_tq_gate("Z3", t_start=t_ref),
-                model.idle_tq_gate("X1", t_start=t_ref),
-                model.zz_coupling_2q("Z1", "D4", t_start=t_ref),
-                model.zz_coupling_2q("X2", "D2", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D7", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D4", t_start=t_ref),
+                self._noise_model.cphase("D1", "Z1", t_start=t_ref),
+                self._noise_model.idle_tq_gate("D2", t_start=t_ref),
+                self._noise_model.cphase("D3", "X2", t_start=t_ref),
+                self._noise_model.idle_tq_gate("Z3", t_start=t_ref),
+                self._noise_model.idle_tq_gate("X1", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("Z1", "D4", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("X2", "D2", t_start=t_ref),
             ]
         )
         t_ref += t_tqg
 
         gates.extend(
             [
-                model.idle_sq_gate("D7", t_start=t_ref),
-                model.idle_sq_gate("D4", t_start=t_ref),
-                model.idle_sq_gate("D1", t_start=t_ref),
-                model.idle_sq_gate("D2", t_start=t_ref),
-                model.idle_sq_gate("D3", t_start=t_ref),
-                model.idle_sq_gate("Z3", t_start=t_ref),
-                model.rotate_y_m90("Z1", t_start=t_ref),
-                model.idle_sq_gate("X1", t_start=t_ref),
-                model.rotate_y_m90("X2", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D7", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D4", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D1", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D2", t_start=t_ref),
+                self._noise_model.idle_sq_gate("D3", t_start=t_ref),
+                self._noise_model.idle_sq_gate("Z3", t_start=t_ref),
+                self._noise_model.rotate_y_m90("Z1", t_start=t_ref),
+                self._noise_model.idle_sq_gate("X1", t_start=t_ref),
+                self._noise_model.rotate_y_m90("X2", t_start=t_ref),
             ]
         )
         t_ref += t_sqg
 
         gates.extend(
             [
-                model.rotate_x_180("D7", t_start=t_ref),
-                model.rotate_x_180("D4", t_start=t_ref),
-                model.rotate_x_180("D1", t_start=t_ref),
-                model.rotate_x_180("D2", t_start=t_ref),
-                model.rotate_x_180("D3", t_start=t_ref),
-                model.idle_sq_gate("Z3", t_start=t_ref),
-                model.idle_sq_gate("Z1", t_start=t_ref),
-                model.idle_sq_gate("X1", t_start=t_ref),
-                model.idle_sq_gate("X2", t_start=t_ref),
+                self._noise_model.rotate_x_180("D7", t_start=t_ref),
+                self._noise_model.rotate_x_180("D4", t_start=t_ref),
+                self._noise_model.rotate_x_180("D1", t_start=t_ref),
+                self._noise_model.rotate_x_180("D2", t_start=t_ref),
+                self._noise_model.rotate_x_180("D3", t_start=t_ref),
+                self._noise_model.idle_sq_gate("Z3", t_start=t_ref),
+                self._noise_model.idle_sq_gate("Z1", t_start=t_ref),
+                self._noise_model.idle_sq_gate("X1", t_start=t_ref),
+                self._noise_model.idle_sq_gate("X2", t_start=t_ref),
             ]
         )
 
@@ -997,12 +997,13 @@ if __name__ == '__main__':
         noise_model=model,
         code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_5),
         dim_lookup=dim_lookup,
+        initial_state_type=InitialStateType.ODD,
     )
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 10
-    error_probabilities = np.linspace(0.0, 0.1, 2)
+    repetitions = 10_000
+    error_probabilities = np.linspace(0.0, 0.1, 3)
     list_of_datasets: List[xr.Dataset] = []
     for i, error_probability in enumerate(error_probabilities):
         involved_qubits, gates = meas_ctrl.construct_distance_5_bitflip_circuit_gates(
