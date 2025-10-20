@@ -590,6 +590,7 @@ class MeasurementControl:
                 self._noise_model.idle_tq_gate("Z3", t_start=t_ref),
                 self._noise_model.idle_tq_gate("X1", t_start=t_ref),
                 self._noise_model.zz_coupling_2q("Z1", "D1", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("Z1", "D2", t_start=t_ref),
                 self._noise_model.zz_coupling_2q("X2", "D3", t_start=t_ref),
             ]
         )
@@ -605,6 +606,7 @@ class MeasurementControl:
                 self._noise_model.idle_tq_gate("Z3", t_start=t_ref),
                 self._noise_model.idle_tq_gate("X1", t_start=t_ref),
                 self._noise_model.zz_coupling_2q("Z1", "D4", t_start=t_ref),
+                self._noise_model.zz_coupling_2q("Z1", "D2", t_start=t_ref),
                 self._noise_model.zz_coupling_2q("X2", "D2", t_start=t_ref),
             ]
         )
