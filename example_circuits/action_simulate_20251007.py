@@ -61,25 +61,25 @@ if __name__ == '__main__':
     dataset.attrs["error_coherence"] = True
     meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d5_baseline.nc", overwrite=True)
 
-    # meas_ctrl = MeasurementControl(
-    #     noise_model=model,
-    #     code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3),
-    #     dim_lookup=dim_lookup,
-    #     initial_state_type=InitialStateType.ODD,
-    # )
-    # _, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates(
-    #     error_probability=float(0.0),
-    #     error_coherence=True,
-    # )
-    # error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
-    #     cycle_circuit_gates=gates,
-    #     depth=qec_rounds,
-    #     repetitions=repetitions,
-    # )
-    # dataset = meas_ctrl.construct_dataset(
-    #     error_identifier=error_identifier,
-    #     noise_file_path=ROOT_DIR / noise_file,
-    # )
-    # dataset.attrs["error_probability"] = 0.0
-    # dataset.attrs["error_coherence"] = True
-    # meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_baseline.nc", overwrite=True)
+    meas_ctrl = MeasurementControl(
+        noise_model=model,
+        code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3),
+        dim_lookup=dim_lookup,
+        initial_state_type=InitialStateType.ODD,
+    )
+    _, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates(
+        error_probability=float(0.0),
+        error_coherence=True,
+    )
+    error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
+        cycle_circuit_gates=gates,
+        depth=qec_rounds,
+        repetitions=repetitions,
+    )
+    dataset = meas_ctrl.construct_dataset(
+        error_identifier=error_identifier,
+        noise_file_path=ROOT_DIR / noise_file,
+    )
+    dataset.attrs["error_probability"] = 0.0
+    dataset.attrs["error_coherence"] = True
+    meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_baseline.nc", overwrite=True)
