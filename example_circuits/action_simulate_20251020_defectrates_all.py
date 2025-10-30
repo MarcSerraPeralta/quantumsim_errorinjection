@@ -1,7 +1,7 @@
 import os
 import xarray as xr
 import numpy as np
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 from pathlib import Path
 from quantumsim import Setup
 from quantumsim.models import DiCarloLabModel
@@ -18,7 +18,7 @@ from qce_interp.interface_definitions.intrf_error_identifier import ErrorDetecti
 
 if __name__ == '__main__':
 
-    noise_file = "setup_noisy_test.yaml"
+    noise_file = "setup_noisy_experimental_match.yaml"
     current_dir = os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR = Path(os.path.join(current_dir, ".."))
     setup = Setup.from_file(os.path.join(ROOT_DIR, noise_file))
@@ -40,18 +40,14 @@ if __name__ == '__main__':
     )
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
-    qec_rounds: int = 20
+    qec_rounds: int = 5
     repetitions = 10_000
 
     code_settings = CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_5)
-    # meas_ctrl = MeasurementControl(
-    #     noise_model=model,
-    #     code_settings=code_settings,
-    #     dim_lookup=dim_lookup,
-    #     initial_state_type=InitialStateType.ODD,
-    # )
 
     code_layout = code_settings.code_layout
+    focus_label: Optional[str] = "defect_rates_baseline"
+    focus_ancilla: Optional[str] = "Z3"
 
     list_of_datasets: List[xr.Dataset] = []
     for parity_group in code_layout.parity_group_z + code_layout.parity_group_x:
@@ -67,34 +63,45 @@ if __name__ == '__main__':
         ]
 
         for i, (label, cycle_circuit, initial_state_type) in enumerate(error_budget_circuits):
-            qubits, gates = cycle_circuit
-            meas_ctrl = MeasurementControl(
-                noise_model=model,
-                code_settings=CodeSettings(
-                    qubits=qubits,
-                    code_layout=code_settings.code_layout,
-                ),
-                dim_lookup=dim_lookup,
-                initial_state_type=initial_state_type,
-            )
-
-            error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
-                cycle_circuit_gates=gates,
-                depth=qec_rounds,
-                repetitions=repetitions,
-                **dict(
-                    inverse_parity=True if label == "defect_rates_switching" else False,
-                    stabilizer_active=True if label in ["defect_rates_full_even_parity", "defect_rates_full_odd_parity"] else False,
+            if (focus_label is None or label == focus_label) and (focus_ancilla is None or parity_group.ancilla_id.id == focus_ancilla):
+                qubits, gates = cycle_circuit
+                meas_ctrl = MeasurementControl(
+                    noise_model=model,
+                    code_settings=CodeSettings(
+                        qubits=qubits,
+                        code_layout=code_settings.code_layout,
+                    ),
+                    dim_lookup=dim_lookup,
+                    initial_state_type=initial_state_type,
                 )
-            )
 
-            dataset = meas_ctrl.construct_dataset(
-                error_identifier=error_identifier,
-                noise_file_path=ROOT_DIR / noise_file,
-            )
+                error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
+                    cycle_circuit_gates=gates,
+                    depth=qec_rounds,
+                    repetitions=repetitions,
+                    **dict(
+                        inverse_parity=True if label == "defect_rates_switching" else False,
+                        stabilizer_active=True if label in ["defect_rates_full_even_parity", "defect_rates_full_odd_parity"] else False,
+                    )
+                )
+
+                dataset = meas_ctrl.construct_dataset(
+                    error_identifier=error_identifier,
+                    noise_file_path=ROOT_DIR / noise_file,
+                )
+            else:
+                dataset = xr.Dataset(
+                    coords={
+                        "stabilizer_repetition": np.arange(qec_rounds + 1)
+                    },
+                    data_vars={
+                        f"defect_rates_{parity_group.ancilla_id.id}": (("stabilizer_repetition",), np.full(qec_rounds + 1, fill_value=np.nan)),
+                        f"defect_rates_post_selected_{parity_group.ancilla_id.id}": (("stabilizer_repetition",), np.full(qec_rounds + 1, fill_value=np.nan)),
+                    }
+                )
             dataset = dataset.expand_dims(
                 dim={
-                "anillca_id": [parity_group.ancilla_id.id],
+                "ancilla_id": [parity_group.ancilla_id.id],
                 "defect_label": [label],
             })
 
@@ -115,15 +122,12 @@ if __name__ == '__main__':
                 rename_map[old_name_2] = new_name_2
             dataset = dataset.rename_vars(rename_map)
 
-            # print(dataset)
             list_of_datasets.append(dataset)
-
-            # print(dataset)
-            # meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_p{parity_group.ancilla_id.id}-{label}.nc", overwrite=True)
 
     # # Concatenate along a new, unnamed dimension
     combined_dataset: xr.Dataset = xr.combine_by_coords(list_of_datasets)
     print(combined_dataset)
     # # Assign the coordinate values to the new dimension
     # combined_stepwise.coords["error_probability"] = error_probabilities
-    meas_ctrl.save_dataset_to_netcdf(combined_dataset, common_path / f"defect_rate_error_budget_d5_all.nc", overwrite=True)
+    file_name = f"defect_rate_error_budget_d5_{'all' if focus_ancilla is None else focus_ancilla}_{'all' if focus_label is None else focus_label}.nc"
+    meas_ctrl.save_dataset_to_netcdf(combined_dataset, common_path / file_name, overwrite=True)
