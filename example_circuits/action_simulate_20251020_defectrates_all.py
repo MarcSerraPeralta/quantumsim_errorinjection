@@ -46,12 +46,12 @@ if __name__ == '__main__':
     code_settings = CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_5)
 
     code_layout = code_settings.code_layout
-    focus_label: Optional[str] = "defect_rates_baseline"
-    focus_ancilla: Optional[str] = "Z3"
+    focus_label: Optional[str] = "defect_rates_active_zz_data_bitflip"
+    focus_ancilla: Optional[str] = "Z1"
 
     list_of_datasets: List[xr.Dataset] = []
     for parity_group in code_layout.parity_group_z + code_layout.parity_group_x:
-        print(parity_group.ancilla_id)
+        # print(parity_group.ancilla_id)
 
         error_budget_circuits: List[Tuple[str, Tuple[List[str], List], InitialStateType]] = [
             ("defect_rates_baseline", MeasurementControl.construct_detector_only_circuit_gates(model, parity_group, code_layout), InitialStateType.ALL_ZERO),
@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
     # # Concatenate along a new, unnamed dimension
     combined_dataset: xr.Dataset = xr.combine_by_coords(list_of_datasets)
-    print(combined_dataset)
+    # print(combined_dataset)
     # # Assign the coordinate values to the new dimension
     # combined_stepwise.coords["error_probability"] = error_probabilities
     file_name = f"defect_rate_error_budget_d5_{'all' if focus_ancilla is None else focus_ancilla}_{'all' if focus_label is None else focus_label}.nc"
