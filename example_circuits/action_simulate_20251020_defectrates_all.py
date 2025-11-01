@@ -40,14 +40,14 @@ if __name__ == '__main__':
     )
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
-    qec_rounds: int = 5
+    qec_rounds: int = 20
     repetitions = 10_000
 
     code_settings = CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_5)
 
     code_layout = code_settings.code_layout
-    focus_label: Optional[str] = "defect_rates_active_zz_data_bitflip"
-    focus_ancilla: Optional[str] = "Z1"
+    focus_label: Optional[str] = None  # "defect_rates_full_odd_parity"
+    focus_ancilla: Optional[str] = None  # "Z1"
 
     list_of_datasets: List[xr.Dataset] = []
     for parity_group in code_layout.parity_group_z + code_layout.parity_group_x:
