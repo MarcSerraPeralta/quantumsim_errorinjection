@@ -200,7 +200,7 @@ setup:
     cphase_phase_corr_error_10: 0.03488
     cphase_phase_corr_error_2q: 0.147222
   - qubits: ["D2", "Z1"] # qubit static, qubit fluxed
-    zz_coupling_wfreq: 0.0  # .000093  # rad / ns
+    zz_coupling_wfreq: .0014  # rad / ns
   - qubits: ["D2", "X2"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .0016  # rad / ns
     quasistatic_flux: 0
@@ -257,3 +257,17 @@ setup:
     cphase_phase_corr_error_01: 0.024422
     cphase_phase_corr_error_10: 0.120366
     cphase_phase_corr_error_2q: 0.087222
+  - qubits: [ "Z3", "D7" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0014  # rad / ns
+  - qubits: [ "Z1", "D1" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0014  # rad / ns
+  - qubits: [ "Z1", "D2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0014  # rad / ns
+  - qubits: [ "X1", "D1" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .001  # rad / ns
+  - qubits: [ "X1", "D2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .001  # rad / ns
+  - qubits: [ "X2", "D2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0016  # rad / ns
+  - qubits: [ "X2", "D3" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0016  # rad / ns
