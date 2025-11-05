@@ -10,7 +10,7 @@ setup:
     cphase_time_phase_corr: 0
     # CPhase error parameters
 #    quasistatic_flux: 0
-    cphase_leakage_rate: 0.005
+#    cphase_leakage_rate: 0.005
 #    cphase_leakage_phase: 1.5707963267948966
 #    cphase_leakage_mobility_rate: 0
 #    cphase_leakage_mobility_phase: 0
@@ -118,6 +118,7 @@ setup:
     meas_prob21: 0
     assign_matrix: [[0.997, 0.002, 0.001], [0.026, 0.965, 0.009], [0.039, 0.135, 0.827]]
   - qubit: X2
+    frequency: 6107
     T1: 18900
     T1_meas: 18900
     T2: 15700
