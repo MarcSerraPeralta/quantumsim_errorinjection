@@ -436,121 +436,32 @@ class DiCarloLabModel(Model):
 
         return (self._idle(qubit, idling_time, t1, t2),)
 
-    # def _idle(self, qubit, duration, t1, t2):
-    #     if np.isfinite(t1) and np.isfinite(t2):
-    #         t_phi = 1.0 / (1.0 / t2 - 0.5 / t1)
-    #         if t_phi < 0:
-    #             raise ValueError("t2 must be less than 2*t1")
-    #         elif np.allclose(t_phi, 0):
-    #             ops_t2 = []
-    #         else:
-    #             ops_t2 = [
-    #                 (8.0 / (9 * t_phi)) ** 0.5
-    #                 * np.array([[1, 0, 0], [0, 0, 0], [0, 0, -1]]),
-    #                 (2.0 / (9 * t_phi)) ** 0.5
-    #                 * np.array([[1, 0, 0], [0, -1, 0], [0, 0, 0]]),
-    #                 (2.0 / (9 * t_phi)) ** 0.5
-    #                 * np.array([[0, 0, 0], [0, 1, 0], [0, 0, -1]]),
-    #             ]
-    #     else:
-    #         ops_t2 = []
-    #
-    #     op_t1 = t1**-0.5 * np.array([
-    #         [0, 1, 0],
-    #         [0, 0, np.sqrt(2)],
-    #         [0, 0, 0]
-    #     ])
-    #
-    #     anharmonicity = self.p("anharmonicity", qubit)
-    #     if not np.allclose(anharmonicity, 0.0):
-    #         ham = np.array(
-    #             [
-    #                 [0.0, 0.0, 0.0],
-    #                 [0.0, 0.0, 0.0],
-    #                 [0.0, 0.0, anharmonicity],
-    #             ]
-    #         )
-    #     else:
-    #         ham = None
-    #
-    #     (dim,) = self.basis_lookup[qubit]
-    #     if dim.dim_hilbert == 2:  # Slice matrix dimensions to work with qubit-state
-    #         op_t1 = op_t1[:2, :2]
-    #         ops_t2 = [op[:2, :2] for op in ops_t2]
-    #         ham = None
-    #
-    #     return Operation.from_lindblad_form(
-    #         duration,
-    #         self.basis_lookup[qubit],
-    #         hamiltonian=ham,
-    #         lindblad_ops=[op_t1, *ops_t2],
-    #     ).at(qubit)
-
-    def _idle(self, qubit: str, duration: float, t1: float, t2: float):
-        """
-        Models idle time decoherence.
-
-        The standard T1 relaxation is replaced by a symmetric bit-flip
-        channel (|0> <-> |1>) with a total probability p=0.1, while
-        T2 dephasing is preserved.
-        """
-        # The T1 channel is removed, so we assume t2 now represents
-        # the pure dephasing time T_phi (since 1/T2 = 1/(2*T1) + 1/T_phi).
-        ops_t2: List[np.ndarray] = []
-        if np.isfinite(t2) and not np.allclose(t2, 0):
-            t_phi: float = t2
-            # Lindblad operators for qutrit dephasing (T_phi)
-            ops_t2 = [
-                (8.0 / (9 * t_phi)) ** 0.5
-                * np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, -1.0]]),
-                (2.0 / (9 * t_phi)) ** 0.5
-                * np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 0.0]]),
-                (2.0 / (9 * t_phi)) ** 0.5
-                * np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]]),
-            ]
-
-        lindblad_ops: List[np.ndarray] = list(ops_t2)
-
-        # Bit-Flip Channel (Replaces T1)
-        p_flip: float = (1 - math.exp(-duration / t1)) / 4
-
-        # Continuous-time rate `gamma` from the
-        # total probability `p_flip` over the `duration`.
-        # gamma = -log(1 - 2*p_flip) / (2 * duration)
-
-        if duration > 0 and p_flip > 0:
-            # Handle the unphysical case of p >= 0.5 (infinite rate)
-            # by capping to a value just below 0.5 to avoid log(0).
-            if p_flip >= 0.5:
-                p_eff: float = 0.4999999999
+    def _idle(self, qubit, duration, t1, t2):
+        if np.isfinite(t1) and np.isfinite(t2):
+            t_phi = 1.0 / (1.0 / t2 - 0.5 / t1)
+            if t_phi < 0:
+                raise ValueError("t2 must be less than 2*t1")
+            elif np.allclose(t_phi, 0):
+                ops_t2 = []
             else:
-                p_eff: float = p_flip
+                ops_t2 = [
+                    (8.0 / (9 * t_phi)) ** 0.5
+                    * np.array([[1, 0, 0], [0, 0, 0], [0, 0, -1]]),
+                    (2.0 / (9 * t_phi)) ** 0.5
+                    * np.array([[1, 0, 0], [0, -1, 0], [0, 0, 0]]),
+                    (2.0 / (9 * t_phi)) ** 0.5
+                    * np.array([[0, 0, 0], [0, 1, 0], [0, 0, -1]]),
+                ]
+        else:
+            ops_t2 = []
 
-            # Calculate the required continuous-time rate gamma
-            gamma_rate: float = -np.log(1.0 - 2.0 * p_eff) / (2.0 * duration)
-            gamma_sqrt: float = np.sqrt(gamma_rate)
+        op_t1 = t1**-0.5 * np.array([
+            [0, 1, 0],
+            [0, 0, np.sqrt(2)],
+            [0, 0, 0]
+        ])
 
-            # Lindblad operator for |1> -> |0> (down)
-            op_down: np.ndarray = gamma_sqrt * np.array([
-                [0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0]
-            ])
-
-            # Lindblad operator for |0> -> |1> (up)
-            op_up: np.ndarray = gamma_sqrt * np.array([
-                [0.0, 0.0, 0.0],
-                [1.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0]
-            ])
-
-            lindblad_ops.append(op_down)
-            lindblad_ops.append(op_up)
-        # If duration is 0, no bit-flip channel is applied,
-        # which is the correct behavior.
-
-        anharmonicity: float = self.p("anharmonicity", qubit)
-        ham: Optional[np.ndarray] = None
+        anharmonicity = self.p("anharmonicity", qubit)
         if not np.allclose(anharmonicity, 0.0):
             ham = np.array(
                 [
@@ -559,25 +470,114 @@ class DiCarloLabModel(Model):
                     [0.0, 0.0, anharmonicity],
                 ]
             )
+        else:
+            ham = None
 
         (dim,) = self.basis_lookup[qubit]
-        final_ops: List[np.ndarray] = []
         if dim.dim_hilbert == 2:  # Slice matrix dimensions to work with qubit-state
-            for op in lindblad_ops:
-                final_ops.append(op[:2, :2])
-
-            if ham is not None:
-                # Anharmonicity term is 0 in the 2x2 subspace
-                ham = ham[:2, :2]
-        else:
-            final_ops = lindblad_ops
+            op_t1 = op_t1[:2, :2]
+            ops_t2 = [op[:2, :2] for op in ops_t2]
+            ham = None
 
         return Operation.from_lindblad_form(
             duration,
             self.basis_lookup[qubit],
             hamiltonian=ham,
-            lindblad_ops=final_ops,
+            lindblad_ops=[op_t1, *ops_t2],
         ).at(qubit)
+
+    # def _idle(self, qubit: str, duration: float, t1: float, t2: float):
+    #     """
+    #     Models idle time decoherence.
+    #
+    #     The standard T1 relaxation is replaced by a symmetric bit-flip
+    #     channel (|0> <-> |1>) with a total probability p=0.1, while
+    #     T2 dephasing is preserved.
+    #     """
+    #     # The T1 channel is removed, so we assume t2 now represents
+    #     # the pure dephasing time T_phi (since 1/T2 = 1/(2*T1) + 1/T_phi).
+    #     ops_t2: List[np.ndarray] = []
+    #     if np.isfinite(t2) and not np.allclose(t2, 0):
+    #         t_phi: float = t2
+    #         # Lindblad operators for qutrit dephasing (T_phi)
+    #         ops_t2 = [
+    #             (8.0 / (9 * t_phi)) ** 0.5
+    #             * np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, -1.0]]),
+    #             (2.0 / (9 * t_phi)) ** 0.5
+    #             * np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 0.0]]),
+    #             (2.0 / (9 * t_phi)) ** 0.5
+    #             * np.array([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, -1.0]]),
+    #         ]
+    #
+    #     lindblad_ops: List[np.ndarray] = list(ops_t2)
+    #
+    #     # Bit-Flip Channel (Replaces T1)
+    #     p_flip: float = (1 - math.exp(-duration / t1)) / 4
+    #
+    #     # Continuous-time rate `gamma` from the
+    #     # total probability `p_flip` over the `duration`.
+    #     # gamma = -log(1 - 2*p_flip) / (2 * duration)
+    #
+    #     if duration > 0 and p_flip > 0:
+    #         # Handle the unphysical case of p >= 0.5 (infinite rate)
+    #         # by capping to a value just below 0.5 to avoid log(0).
+    #         if p_flip >= 0.5:
+    #             p_eff: float = 0.4999999999
+    #         else:
+    #             p_eff: float = p_flip
+    #
+    #         # Calculate the required continuous-time rate gamma
+    #         gamma_rate: float = -np.log(1.0 - 2.0 * p_eff) / (2.0 * duration)
+    #         gamma_sqrt: float = np.sqrt(gamma_rate)
+    #
+    #         # Lindblad operator for |1> -> |0> (down)
+    #         op_down: np.ndarray = gamma_sqrt * np.array([
+    #             [0.0, 1.0, 0.0],
+    #             [0.0, 0.0, 0.0],
+    #             [0.0, 0.0, 0.0]
+    #         ])
+    #
+    #         # Lindblad operator for |0> -> |1> (up)
+    #         op_up: np.ndarray = gamma_sqrt * np.array([
+    #             [0.0, 0.0, 0.0],
+    #             [1.0, 0.0, 0.0],
+    #             [0.0, 0.0, 0.0]
+    #         ])
+    #
+    #         lindblad_ops.append(op_down)
+    #         lindblad_ops.append(op_up)
+    #     # If duration is 0, no bit-flip channel is applied,
+    #     # which is the correct behavior.
+    #
+    #     anharmonicity: float = self.p("anharmonicity", qubit)
+    #     ham: Optional[np.ndarray] = None
+    #     if not np.allclose(anharmonicity, 0.0):
+    #         ham = np.array(
+    #             [
+    #                 [0.0, 0.0, 0.0],
+    #                 [0.0, 0.0, 0.0],
+    #                 [0.0, 0.0, anharmonicity],
+    #             ]
+    #         )
+    #
+    #     (dim,) = self.basis_lookup[qubit]
+    #     final_ops: List[np.ndarray] = []
+    #     if dim.dim_hilbert == 2:  # Slice matrix dimensions to work with qubit-state
+    #         for op in lindblad_ops:
+    #             final_ops.append(op[:2, :2])
+    #
+    #         if ham is not None:
+    #             # Anharmonicity term is 0 in the 2x2 subspace
+    #             ham = ham[:2, :2]
+    #     else:
+    #         final_ops = lindblad_ops
+    #
+    #     return Operation.from_lindblad_form(
+    #         duration,
+    #         self.basis_lookup[qubit],
+    #         hamiltonian=ham,
+    #         lindblad_ops=final_ops,
+    #     ).at(qubit)
 
     def get_ordered_qubits_to_basis(self, qubits: List[str]) -> Iterable:
         return [self.basis_lookup[qubit_name][0] for qubit_name in qubits]
