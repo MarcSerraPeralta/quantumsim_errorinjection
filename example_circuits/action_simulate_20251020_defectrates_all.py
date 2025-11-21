@@ -19,6 +19,7 @@ from qce_interp.interface_definitions.intrf_error_identifier import ErrorDetecti
 if __name__ == '__main__':
 
     noise_file = "setup_noisy_experimental_match.yaml"
+    # noise_file = "setup_noisy_perfect_to_experiment_case.yaml"
     current_dir = os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR = Path(os.path.join(current_dir, ".."))
     setup = Setup.from_file(os.path.join(ROOT_DIR, noise_file))
@@ -40,14 +41,14 @@ if __name__ == '__main__':
     )
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
-    qec_rounds: int = 20
+    qec_rounds: int = 10
     repetitions = 10_000
 
-    code_settings = CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_5)
+    code_settings = CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3)
 
     code_layout = code_settings.code_layout
-    focus_label: Optional[str] = None  # "defect_rates_full_odd_parity"
-    focus_ancilla: Optional[str] = None  # "Z1"
+    focus_label: Optional[str] = "defect_rates_full_odd_parity"
+    focus_ancilla: Optional[str] = "X1"
 
     list_of_datasets: List[xr.Dataset] = []
     for parity_group in code_layout.parity_group_z + code_layout.parity_group_x:

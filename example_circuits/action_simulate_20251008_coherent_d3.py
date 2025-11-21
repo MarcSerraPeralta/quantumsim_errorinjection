@@ -16,7 +16,10 @@ from qce_interp.interface_definitions.intrf_error_identifier import ErrorDetecti
 
 if __name__ == '__main__':
 
-    noise_file = "setup_noisy_test.yaml"
+    noise_file = "setup_noisy_experimental_match.yaml"
+    # noise_file = "setup_noisy_test.yaml"
+    # noise_file = "setup_noisy_perfect_case.yaml"
+    # noise_file = "setup_noisy_perfect_to_experiment_case.yaml"
     current_dir = os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR = Path(os.path.join(current_dir, ".."))
     setup = Setup.from_file(os.path.join(ROOT_DIR, noise_file))
@@ -39,9 +42,12 @@ if __name__ == '__main__':
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 10_000
+    repetitions = 30_000
 
-    error_probabilities = np.linspace(0.0, 0.1, 10)
+    error_probabilities = np.linspace(0.0, 0.1, 5)
+    # error_probabilities = np.linspace(0.0, 0.1, 2)
+    # error_probabilities = np.asarray([0.1])
+    # error_probabilities = np.asarray([0.0] + [0.06] * 3 + [0.08] * 5 + [0.1] * 5)
 
     meas_ctrl = MeasurementControl(
         noise_model=model,
@@ -66,7 +72,7 @@ if __name__ == '__main__':
             noise_file_path=ROOT_DIR / noise_file,
         )
         dataset.attrs["error_probability"] = error_probability
-        dataset.attrs["error_coherence"] = True
+        dataset.attrs["error_coherence"] = int(True)
         list_of_datasets.append(dataset)
 
         # print(dataset)
@@ -95,7 +101,7 @@ if __name__ == '__main__':
             noise_file_path=ROOT_DIR / noise_file,
         )
         dataset.attrs["error_probability"] = error_probability
-        dataset.attrs["error_coherence"] = False
+        dataset.attrs["error_coherence"] = int(False)
         list_of_datasets.append(dataset)
 
         # print(dataset)

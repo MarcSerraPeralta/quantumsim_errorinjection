@@ -363,11 +363,29 @@ class MeasurementControl:
             )
         return dataset
 
-    def construct_distance_3_bitflip_circuit_gates(self, error_probability: float = 0.0, error_coherence: bool = True) -> Tuple[IQubitList, IGateList]:
+    def construct_distance_3_bitflip_circuit_gates_fermioniclike(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        combined_gates.extend([
+            self._noise_model.random_rotate_x_180_t1like("D4", t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("Z1", t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D1", t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("X1", t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D2", t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
+    def construct_distance_3_bitflip_circuit_gates(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
         gates = []
         t_sqg: float = 20
         t_tqg: float = 60
-        t_ref: float = 0
         qubits: List[str] = self._code_settings.qubits
         # Random flips
         if error_coherence:

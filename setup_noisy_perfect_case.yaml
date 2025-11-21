@@ -25,8 +25,8 @@ setup:
     # Qubit parameters
   - qubit: D4
     frequency: 6802
-    T1: 40000
-    T1_meas: 40000
+    T1: 3264
+    T1_meas: 3264
     T2: 25000
     T2_int: 25000
     anharmonicity: -299
@@ -40,8 +40,8 @@ setup:
       [0.0, 0.0, 1.0]]
   - qubit: Z1
     frequency: 6087
-    T1: 40000
-    T1_meas: 40000
+    T1: 1139
+    T1_meas: 1139
     T2: 24700
     T2_int: 24700
     anharmonicity: -302
@@ -55,8 +55,8 @@ setup:
       [0.0, 0.0, 1.0]]
   - qubit: D1
     frequency: 4843
-    T1: 40000
-    T1_meas: 40000
+    T1: 3264
+    T1_meas: 3264
     T2: 25000
     T2_int: 25000
     anharmonicity: -314
@@ -70,8 +70,8 @@ setup:
       [0.0, 0.0, 1.0]]
   - qubit: X1
     frequency: 5891
-    T1: 40000
-    T1_meas: 40000
+    T1: 1139
+    T1_meas: 1139
     T2: 25000
     T2_int: 25000
     anharmonicity: -302
@@ -85,8 +85,8 @@ setup:
       [0.0, 0.0, 1.0]]
   - qubit: D2
     frequency: 4788
-    T1: 40000
-    T1_meas: 40000
+    T1: 3264
+    T1_meas: 3264
     T2: 25000
     T2_int: 25000
     anharmonicity: -317
