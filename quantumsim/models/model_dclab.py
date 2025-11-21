@@ -240,6 +240,17 @@ class DiCarloLabModel(Model):
             self._idle(qubit, half_duration, t1, t2),
         )
 
+    def depolarizing_channel(self, qubit, t_start=0):
+        px = self.p("px", qubit)
+        py = self.p("py", qubit)
+        pz = self.p("pz", qubit)
+        return (
+            self.ops_lookup[qubit]
+            .depolarizing_channel(px=px, py=py, pz=pz)
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
+        )
+
     def random_rotate_x_180_t1like(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         duration = 500  # Full cycle time duration self.p("time_1qubit", qubit)
