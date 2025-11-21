@@ -78,6 +78,37 @@ def random_rotate_x(angle=np.pi, prob=1):
     return Operation.from_kraus((k1, k2), bases1_default)
 
 
+def depolarizing_channel(px=0, py=0, pz=0):
+    """A depolarizing channel.
+
+    Parameters
+    ----------
+    px: float, optional
+        Probability of an X error
+    py: float, optional
+        Probability of an Y error
+    pz: float, optional
+        Probability of an Z error
+
+    Returns
+    -------
+    Operation
+        An operation, that corresponds to the depolarizing channel.
+    """
+    pi = 1 - px - py - pz
+    ki = np.sqrt(1 - pi) * np.eye(2)
+
+    sigma_x = np.array([[0, 1], [1, 0]])
+    kx = np.sqrt(px) * sigma_x
+
+    sigma_y = np.array([[0, -1j], [1j, 0]])
+    ky = np.sqrt(py) * sigma_y
+
+    sigma_z = np.array([[1, 0], [0, -1]])
+    kz = np.sqrt(pz) * sigma_z
+    return Operation.from_kraus((ki, kx, ky, kz), bases1_default)
+
+
 def rotate_y(angle=np.pi):
     """A perfect single qubit rotation around :math:`Oy` axis.
 
@@ -202,10 +233,7 @@ def controlled_rotation(angle=np.pi, axis="z"):
 def amp_damping(total_rate=None, *, exc_rate=None, damp_rate=None):
     if total_rate is not None:
         kraus = np.array(
-            [
-                [[1, 0], [0, np.sqrt(1 - total_rate)]],
-                [[0, np.sqrt(total_rate)], [0, 0]]
-            ]
+            [[[1, 0], [0, np.sqrt(1 - total_rate)]], [[0, np.sqrt(total_rate)], [0, 0]]]
         )
         return Operation.from_kraus(kraus, bases1_default)
     else:
@@ -336,6 +364,4 @@ def meas_butterfly(p0_up, p1_up, p1_down, p2_down):
         quantumsim.operation._PTMOperation
     """
     basis = (bases.general(2).computational_subbasis(),)
-    return amp_damping_qubit(p0_up, p1_down).set_bases(
-        bases_in=basis, bases_out=basis
-    )
+    return amp_damping_qubit(p0_up, p1_down).set_bases(bases_in=basis, bases_out=basis)

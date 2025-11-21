@@ -81,6 +81,37 @@ def random_rotate_x(angle=np.pi, prob=1):
     return Operation.from_kraus((k1, k2), bases1_default)
 
 
+def depolarizing_channel(px=0, py=0, pz=0):
+    """A depolarizing channel.
+
+    Parameters
+    ----------
+    px: float, optional
+        Probability of an X error
+    py: float, optional
+        Probability of an Y error
+    pz: float, optional
+        Probability of an Z error
+
+    Returns
+    -------
+    Operation
+        An operation, that corresponds to the depolarizing channel.
+    """
+    pi = 1 - px - py - pz
+    ki = np.sqrt(1 - pi) * np.eye(3)
+
+    sigma_x = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+    kx = np.sqrt(px) * sigma_x
+
+    sigma_y = np.array([[0, -1j, 0], [1j, 0, 0], [0, 0, 1]])
+    ky = np.sqrt(py) * sigma_y
+
+    sigma_z = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]])
+    kz = np.sqrt(pz) * sigma_z
+    return Operation.from_kraus((ki, kx, ky, kz), bases1_default)
+
+
 def rotate_x12(angle=np.pi):
     """A perfect single qubit rotation around :math:`Ox_{12}` axis.
 
