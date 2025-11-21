@@ -251,6 +251,15 @@ class DiCarloLabModel(Model):
             .at(qubit),
         )
 
+    def amplitude_damping_01(self, qubit, t=0, t_start=0):
+        t1 = self.p("T1", qubit)
+        return (
+            self.ops_lookup[qubit]
+            .amplitude_damping_01(t=t, t1=t1)
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
+        )
+
     def random_rotate_x_180_t1like(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         duration = 500  # Full cycle time duration self.p("time_1qubit", qubit)
