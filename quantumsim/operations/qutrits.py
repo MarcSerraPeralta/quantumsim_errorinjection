@@ -112,6 +112,27 @@ def depolarizing_channel(px=0, py=0, pz=0):
     return Operation.from_kraus((ki, kx, ky, kz), bases1_default)
 
 
+def amplitude_damping_01(t, t1=np.inf):
+    """An amplitude damping channel from |1> to |0>.
+
+    Parameters
+    ----------
+    t: float
+        Duration of this channel.
+    t1: float, optional
+        T1 time.
+
+    Returns
+    -------
+    Operation
+        An operation, that corresponds to the amplitude damping channel.
+    """
+    p = 1 - np.exp(-t/t1)
+    k0 = np.array([[1, 0, 0], [0, np.sqrt(1-p), 0], [0, 0, 1]])
+    k1 = np.array([[0, np.sqrt(p), 0], [0, 0, 0], [0, 0, 1]])
+    return Operation.from_kraus((k0, k1), bases1_default)
+
+
 def rotate_x12(angle=np.pi):
     """A perfect single qubit rotation around :math:`Ox_{12}` axis.
 
