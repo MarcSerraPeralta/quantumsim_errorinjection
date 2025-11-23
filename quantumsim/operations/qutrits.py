@@ -99,7 +99,7 @@ def depolarizing_channel(px=0, py=0, pz=0):
         An operation, that corresponds to the depolarizing channel.
     """
     pi = 1 - px - py - pz
-    ki = np.sqrt(1 - pi) * np.eye(3)
+    ki = np.sqrt(pi) * np.eye(3)
 
     sigma_x = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
     kx = np.sqrt(px) * sigma_x
