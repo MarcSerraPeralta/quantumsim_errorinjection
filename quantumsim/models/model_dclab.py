@@ -1,3 +1,6 @@
+# ------------------------
+# Reference: https://arxiv.org/pdf/1210.5799
+# ------------------------
 import math
 import numpy as np
 import quantumsim.operations.qubits as ops2
@@ -242,10 +245,10 @@ class DiCarloLabModel(Model):
 
     def depolarizing_channel(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
-        duration = 500  # Full cycle time duration (3 * 20 + 4 * 60 + 300)
+        duration = 600  # Full cycle time duration (3 * 20 + 4 * 60 + 300)
         p = (1 - np.exp(-duration / t1))
-        px = p / 8
-        py = p / 8
+        px = p / 4
+        py = p / 4
         pz = (2 - p - 2 * np.sqrt(1-p)) / 4
 
         # px = self.p("px", qubit)
@@ -270,12 +273,11 @@ class DiCarloLabModel(Model):
     def random_rotate_x_180_t1like(self, qubit, t_start=0):
         t1 = self.p("T1", qubit)
         duration = 600  # Full cycle time duration self.p("time_1qubit", qubit)
-        prob = (1 - np.exp(-duration / t1)) / 4
-        # print(prob, duration, t1)
-        # half_duration = 0.5 * duration
+        p = (1 - np.exp(-duration / t1))
+        px = p / 2
         return (
             self.ops_lookup[qubit]
-            .random_rotate_x(rad(180), prob=prob)
+            .random_rotate_x(rad(180), prob=px)
             .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
             .at(qubit),
         )
