@@ -20,7 +20,7 @@ if __name__ == '__main__':
     current_dir = os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR = Path(os.path.join(current_dir, ".."))
     setup = Setup.from_file(os.path.join(ROOT_DIR, noise_file))
-    state_dim: int = 3
+    state_dim: int = 2
     dim_lookup = {
         "D7": 2,
         "Z3": state_dim,
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 5_000
+    repetitions = 30  # 10_000
 
     # x = - 500 / np.log(1 - 0.0888 * 4)
     # print(x)
@@ -78,15 +78,19 @@ if __name__ == '__main__':
         error_coherence=True,
     )
     # print(gates)
-    error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
+    error_identifier, raw_dataset = meas_ctrl.construct_error_identifier(
         cycle_circuit_gates=gates,
         depth=qec_rounds,
         repetitions=repetitions,
     )
+    error_identifier: ErrorDetectionIdentifier
     dataset = meas_ctrl.construct_dataset(
         error_identifier=error_identifier,
         noise_file_path=ROOT_DIR / noise_file,
     )
+    dataset["simulated_dataset"] = raw_dataset
+    dataset.attrs.update(raw_dataset.attrs)
     dataset.attrs["error_probability"] = 0.0
     dataset.attrs["error_coherence"] = int(True)
+    print(dataset)
     meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_baseline.nc", overwrite=True)

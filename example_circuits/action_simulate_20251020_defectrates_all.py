@@ -75,8 +75,7 @@ if __name__ == '__main__':
                     dim_lookup=dim_lookup,
                     initial_state_type=initial_state_type,
                 )
-
-                error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
+                error_identifier, raw_dataset = meas_ctrl.construct_error_identifier(
                     cycle_circuit_gates=gates,
                     depth=qec_rounds,
                     repetitions=repetitions,
@@ -85,7 +84,7 @@ if __name__ == '__main__':
                         stabilizer_active=True if label in ["defect_rates_full_even_parity", "defect_rates_full_odd_parity"] else False,
                     )
                 )
-
+                error_identifier: ErrorDetectionIdentifier
                 dataset = meas_ctrl.construct_dataset(
                     error_identifier=error_identifier,
                     noise_file_path=ROOT_DIR / noise_file,

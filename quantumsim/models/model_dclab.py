@@ -250,10 +250,6 @@ class DiCarloLabModel(Model):
         px = p / 4
         py = p / 4
         pz = (2 - p - 2 * np.sqrt(1-p)) / 4
-
-        # px = self.p("px", qubit)
-        # py = self.p("py", qubit)
-        # pz = self.p("pz", qubit)
         return (
             self.ops_lookup[qubit]
             .depolarizing_channel(px=px, py=py, pz=pz)
@@ -263,6 +259,7 @@ class DiCarloLabModel(Model):
 
     def amplitude_damping_01(self, qubit, t=0, t_start=0):
         t1 = self.p("T1", qubit)
+        # duration = 600
         return (
             self.ops_lookup[qubit]
             .amplitude_damping_01(t=t, t1=t1)

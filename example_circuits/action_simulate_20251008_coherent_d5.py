@@ -55,12 +55,12 @@ if __name__ == '__main__':
             error_probability=float(error_probability),
             error_coherence=True,
         )
-        error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
+        error_identifier, raw_dataset = meas_ctrl.construct_error_identifier(
             cycle_circuit_gates=gates,
             depth=qec_rounds,
             repetitions=repetitions,
         )
-
+        error_identifier: ErrorDetectionIdentifier
         dataset = meas_ctrl.construct_dataset(
             error_identifier=error_identifier,
             noise_file_path=ROOT_DIR / noise_file,
@@ -84,12 +84,12 @@ if __name__ == '__main__':
             error_probability=float(error_probability),
             error_coherence=False,
         )
-        error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
+        error_identifier, raw_dataset = meas_ctrl.construct_error_identifier(
             cycle_circuit_gates=gates,
             depth=qec_rounds,
             repetitions=repetitions,
         )
-
+        error_identifier: ErrorDetectionIdentifier
         dataset = meas_ctrl.construct_dataset(
             error_identifier=error_identifier,
             noise_file_path=ROOT_DIR / noise_file,
