@@ -39,45 +39,18 @@ if __name__ == '__main__':
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 30  # 10_000
-
-    # x = - 500 / np.log(1 - 0.0888 * 4)
-    # print(x)
-
-    # meas_ctrl = MeasurementControl(
-    #     noise_model=model,
-    #     code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_5),
-    #     dim_lookup=dim_lookup,
-    #     initial_state_type=InitialStateType.ODD,
-    # )
-    # _, gates = meas_ctrl.construct_distance_5_bitflip_circuit_gates(
-    #     error_probability=float(0.0),
-    #     error_coherence=True,
-    # )
-    # error_identifier: ErrorDetectionIdentifier = meas_ctrl.construct_error_identifier(
-    #     cycle_circuit_gates=gates,
-    #     depth=qec_rounds,
-    #     repetitions=repetitions,
-    # )
-    # dataset = meas_ctrl.construct_dataset(
-    #     error_identifier=error_identifier,
-    #     noise_file_path=ROOT_DIR / noise_file,
-    # )
-    # dataset.attrs["error_probability"] = 0.0
-    # dataset.attrs["error_coherence"] = int(True)
-    # meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d5_baseline.nc", overwrite=True)
+    repetitions = 10_000
 
     meas_ctrl = MeasurementControl(
         noise_model=model,
-        code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3),
+        code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_5),
         dim_lookup=dim_lookup,
         initial_state_type=InitialStateType.ODD,
     )
-    _, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates_fermioniclike(
+    _, gates = meas_ctrl.construct_distance_5_bitflip_circuit_gates_fermioniclike(
         error_probability=float(0.0),
         error_coherence=True,
     )
-    # print(gates)
     error_identifier, raw_dataset = meas_ctrl.construct_error_identifier(
         cycle_circuit_gates=gates,
         depth=qec_rounds,
@@ -88,9 +61,34 @@ if __name__ == '__main__':
         error_identifier=error_identifier,
         noise_file_path=ROOT_DIR / noise_file,
     )
-    dataset["simulated_dataset"] = raw_dataset
-    dataset.attrs.update(raw_dataset.attrs)
     dataset.attrs["error_probability"] = 0.0
     dataset.attrs["error_coherence"] = int(True)
-    print(dataset)
-    meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_baseline.nc", overwrite=True)
+    meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d5_baseline.nc", overwrite=True)
+
+    # meas_ctrl = MeasurementControl(
+    #     noise_model=model,
+    #     code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3),
+    #     dim_lookup=dim_lookup,
+    #     initial_state_type=InitialStateType.ODD,
+    # )
+    # _, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates_fermioniclike(
+    #     error_probability=float(0.0),
+    #     error_coherence=True,
+    # )
+    # # print(gates)
+    # error_identifier, raw_dataset = meas_ctrl.construct_error_identifier(
+    #     cycle_circuit_gates=gates,
+    #     depth=qec_rounds,
+    #     repetitions=repetitions,
+    # )
+    # error_identifier: ErrorDetectionIdentifier
+    # dataset = meas_ctrl.construct_dataset(
+    #     error_identifier=error_identifier,
+    #     noise_file_path=ROOT_DIR / noise_file,
+    # )
+    # dataset["simulated_dataset"] = raw_dataset
+    # dataset.attrs.update(raw_dataset.attrs)
+    # dataset.attrs["error_probability"] = 0.0
+    # dataset.attrs["error_coherence"] = int(True)
+    # print(dataset)
+    # meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_baseline.nc", overwrite=True)

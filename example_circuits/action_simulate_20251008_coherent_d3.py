@@ -77,9 +77,6 @@ if __name__ == '__main__':
         dataset.attrs["error_coherence"] = int(True)
         list_of_datasets.append(dataset)
 
-        # print(dataset)
-        meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_p{i}-{len(error_probabilities)}_coherent.nc", overwrite=True)
-
     # Concatenate along a new, unnamed dimension
     combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
     # Assign the coordinate values to the new dimension
@@ -107,9 +104,6 @@ if __name__ == '__main__':
         dataset.attrs["error_probability"] = error_probability
         dataset.attrs["error_coherence"] = int(False)
         list_of_datasets.append(dataset)
-
-        # print(dataset)
-        meas_ctrl.save_dataset_to_netcdf(dataset, common_path / f"defect_rate_d3_p{i}-{len(error_probabilities)}_stochastic.nc",  overwrite=True)
 
     # Concatenate along a new, unnamed dimension
     combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")

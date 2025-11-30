@@ -23,6 +23,36 @@ setup:
     # assign_matrix[i, j] = prob(noisy outcome j | ideal outcome or initial state i)
 
     # Qubit parameters
+  - qubit: D7
+    frequency: 6802
+    T1: 8147  # 3264
+    T1_meas: 8147  # 3264
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -299
+    meas_prob01: 0
+    meas_prob10: 0
+    meas_prob12: 0
+    meas_prob21: 0
+    assign_matrix: [
+      [1.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0],
+      [0.0, 0.0, 1.0]]
+  - qubit: Z3
+    frequency: 6087
+    T1: 3068  # 1139
+    T1_meas: 3068  # 1139
+    T2: 24700
+    T2_int: 24700
+    anharmonicity: -302
+    meas_prob01: 0
+    meas_prob10: 0
+    meas_prob12: 0
+    meas_prob21: 0
+    assign_matrix: [
+      [1.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0],
+      [0.0, 0.0, 1.0]]
   - qubit: D4
     frequency: 6802
     T1: 8147  # 3264
@@ -98,6 +128,64 @@ setup:
       [1.0, 0.0, 0.0],
       [0.0, 1.0, 0.0],
       [0.0, 0.0, 1.0]]
+  - qubit: X2
+    frequency: 5891
+    T1: 3068  # 1139
+    T1_meas: 3068  # 1139
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -302
+    meas_prob01: 0
+    meas_prob10: 0
+    meas_prob12: 0
+    meas_prob21: 0
+    assign_matrix: [
+      [1.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0],
+      [0.0, 0.0, 1.0]]
+  - qubit: D3
+    frequency: 4788
+    T1: 8147  # 3264
+    T1_meas: 8147  # 3264
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -317
+    meas_prob01: 0
+    meas_prob10: 0
+    meas_prob12: 0
+    meas_prob21: 0
+    assign_matrix: [
+      [1.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0],
+      [0.0, 0.0, 1.0]]
+  - qubits: [ "D7", "Z3" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.0
+    cphase_phase_corr_error_10: 0.0
+    cphase_phase_corr_error_2q: 0.0
+  - qubits: [ "Z3", "D4" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.0
+    cphase_phase_corr_error_10: 0.0
+    cphase_phase_corr_error_2q: 0.0
   - qubits: ["Z1", "D4"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .0  # rad / ns
     quasistatic_flux: 0
@@ -154,6 +242,38 @@ setup:
     cphase_phase_corr_error_01: 0.0
     cphase_phase_corr_error_10: 0.0
     cphase_phase_corr_error_2q: 0.0
+  - qubits: ["D2", "X2"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.0
+    cphase_phase_corr_error_10: 0.0
+    cphase_phase_corr_error_2q: 0.0
+  - qubits: ["D3", "X2"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.0
+    cphase_phase_corr_error_10: 0.0
+    cphase_phase_corr_error_2q: 0.0
+  - qubits: ["Z3", "D7"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: ["D4", "Z3"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
   - qubits: ["D2", "Z1"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .0  # rad / ns
   - qubits: [ "Z1", "D1" ] # qubit static, qubit fluxed
