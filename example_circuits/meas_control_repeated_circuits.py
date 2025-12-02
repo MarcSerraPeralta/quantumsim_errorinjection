@@ -69,6 +69,8 @@ from quantumsim.utilities.process_initial_circuit import (
 
 IQubitList = List[str]
 IGateList = List[Any]
+QEC_DURATION_D3: float = 600
+QEC_DURATION_D5: float = 880
 
 
 @unique
@@ -418,6 +420,25 @@ class MeasurementControl:
         return qubits, combined_gates
 
     def construct_distance_3_bitflip_circuit_gates_amplitude_damping(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        combined_gates.extend([
+            self._noise_model.amplitude_damping_01("D4", t=600, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z1", t=600, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D1", t=600, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X1", t=600, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D2", t=600, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
+    def construct_distance_3_bitflip_circuit_gates_phase_damping(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
