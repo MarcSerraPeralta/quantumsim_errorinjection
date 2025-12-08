@@ -385,11 +385,11 @@ class MeasurementControl:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
-            self._noise_model.random_rotate_x_180_t1like("D4", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("Z1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("D1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("X1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("D2", t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D2", t=QEC_DURATION_D3, t_start=t_ref),
         ])
         t_ref += t_sqg
         qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
@@ -404,11 +404,11 @@ class MeasurementControl:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
-            self._noise_model.depolarizing_channel("D4", t_start=t_ref),
-            self._noise_model.depolarizing_channel("Z1", t_start=t_ref),
-            self._noise_model.depolarizing_channel("D1", t_start=t_ref),
-            self._noise_model.depolarizing_channel("X1", t_start=t_ref),
-            self._noise_model.depolarizing_channel("D2", t_start=t_ref),
+            self._noise_model.depolarizing_channel("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.depolarizing_channel("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.depolarizing_channel("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D2", t=QEC_DURATION_D3, t_start=t_ref),
         ])
         t_ref += t_sqg
         qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
@@ -423,11 +423,11 @@ class MeasurementControl:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
-            self._noise_model.amplitude_damping_01("D4", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("Z1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("D1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("X1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("D2", t=600, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D2", t=QEC_DURATION_D3, t_start=t_ref),
         ])
         t_ref += t_sqg
         qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
@@ -442,11 +442,18 @@ class MeasurementControl:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
-            self._noise_model.amplitude_damping_01("D4", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("Z1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("D1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("X1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("D2", t=600, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D2", t=QEC_DURATION_D3, t_start=t_ref),
+        ])
+        combined_gates.extend([
+            self._noise_model.phase_damping_01("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.phase_damping_01("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.phase_damping_01("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.phase_damping_01("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.phase_damping_01("D2", t=QEC_DURATION_D3, t_start=t_ref),
         ])
         t_ref += t_sqg
         qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
@@ -581,15 +588,15 @@ class MeasurementControl:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
-            self._noise_model.random_rotate_x_180_t1like("D7", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("D4", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("D1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("D2", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("D3", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("Z3", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("Z1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("X1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("X2", t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D7", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D4", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D2", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("Z3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("Z1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("X1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("X2", t=QEC_DURATION_D5, t_start=t_ref),
         ])
         t_ref += t_sqg
         qubits, gates = self.construct_distance_5_bitflip_circuit_gates(
@@ -604,15 +611,15 @@ class MeasurementControl:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
-            self._noise_model.depolarizing_channel("D7", t_start=t_ref),
-            self._noise_model.depolarizing_channel("D4", t_start=t_ref),
-            self._noise_model.depolarizing_channel("D1", t_start=t_ref),
-            self._noise_model.depolarizing_channel("D2", t_start=t_ref),
-            self._noise_model.depolarizing_channel("D3", t_start=t_ref),
-            self._noise_model.depolarizing_channel("Z3", t_start=t_ref),
-            self._noise_model.depolarizing_channel("Z1", t_start=t_ref),
-            self._noise_model.depolarizing_channel("X1", t_start=t_ref),
-            self._noise_model.depolarizing_channel("X2", t_start=t_ref),
+            self._noise_model.depolarizing_channel("D7", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D4", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D2", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("Z3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("Z1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("X1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("X2", t=QEC_DURATION_D5, t_start=t_ref),
         ])
         t_ref += t_sqg
         qubits, gates = self.construct_distance_5_bitflip_circuit_gates(
@@ -627,15 +634,15 @@ class MeasurementControl:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
-            self._noise_model.amplitude_damping_01("D7", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("D4", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("D1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("D2", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("D3", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("Z3", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("Z1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("X1", t=600, t_start=t_ref),
-            self._noise_model.amplitude_damping_01("X2", t=600, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D7", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D4", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D2", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X2", t=QEC_DURATION_D5, t_start=t_ref),
         ])
         t_ref += t_sqg
         qubits, gates = self.construct_distance_5_bitflip_circuit_gates(

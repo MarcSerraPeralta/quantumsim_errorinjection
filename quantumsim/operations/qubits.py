@@ -130,6 +130,28 @@ def amplitude_damping_01(t, t1=np.inf):
     return Operation.from_kraus((k0, k1), bases1_default)
 
 
+def phase_damping_01(t, t2=np.inf):
+    """A phase damping channel from |1> to |0>.
+
+    Parameters
+    ----------
+    t: float
+        Duration of this channel.
+    t2: float, optional
+        T2 time.
+
+    Returns
+    -------
+    Operation
+        An operation, that corresponds to the amplitude damping channel.
+    """
+    p = 1 - np.exp(-t/t2)
+
+    k0 = np.array([[1, 0], [0, np.sqrt(1-p)]])
+    k1 = np.array([[0, 0], [0, np.sqrt(p)]])
+    return Operation.from_kraus((k0, k1), bases1_default)
+
+
 def rotate_y(angle=np.pi):
     """A perfect single qubit rotation around :math:`Oy` axis.
 

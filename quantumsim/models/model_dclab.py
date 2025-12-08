@@ -243,9 +243,9 @@ class DiCarloLabModel(Model):
             self._idle(qubit, half_duration, t1, t2),
         )
 
-    def depolarizing_channel(self, qubit, t_start=0):
+    def depolarizing_channel(self, qubit, t=0, t_start=0):
         t1 = self.p("T1", qubit)
-        duration = 600  # Full cycle time duration (3 * 20 + 4 * 60 + 300)
+        duration = t
         p = (1 - np.exp(-duration / t1))
         px = p / 4
         py = p / 4
@@ -259,7 +259,6 @@ class DiCarloLabModel(Model):
 
     def amplitude_damping_01(self, qubit, t=0, t_start=0):
         t1 = self.p("T1", qubit)
-        # duration = 600
         return (
             self.ops_lookup[qubit]
             .amplitude_damping_01(t=t, t1=t1)
@@ -267,9 +266,20 @@ class DiCarloLabModel(Model):
             .at(qubit),
         )
 
-    def random_rotate_x_180_t1like(self, qubit, t_start=0):
+    def phase_damping_01(self, qubit, t=0, t_start=0):
         t1 = self.p("T1", qubit)
-        duration = 600  # Full cycle time duration self.p("time_1qubit", qubit)
+        factor_t1_to_t2 = self.p("T1_T2_ratio", qubit)
+        t2 = t1 * factor_t1_to_t2
+        return (
+            self.ops_lookup[qubit]
+            .phase_damping_01(t=t, t2=t2)
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
+        )
+
+    def random_rotate_x_180_t1like(self, qubit, t=0, t_start=0):
+        t1 = self.p("T1", qubit)
+        duration = t
         p = (1 - np.exp(-duration / t1))
         px = p / 2
         return (
@@ -475,70 +485,70 @@ class DiCarloLabModel(Model):
 
         return (self._idle(qubit, idling_time, t1, t2),)
 
-    # def _idle(self, qubit, duration, t1, t2):
-    #     if np.isfinite(t1) and np.isfinite(t2):
-    #         t_phi = 1.0 / (1.0 / t2 - 0.5 / t1)
-    #         if t_phi < 0:
-    #             raise ValueError("t2 must be less than 2*t1")
-    #         elif np.allclose(t_phi, 0):
-    #             ops_t2 = []
-    #         else:
-    #             ops_t2 = [
-    #                 (8.0 / (9 * t_phi)) ** 0.5
-    #                 * np.array([[1, 0, 0], [0, 0, 0], [0, 0, -1]]),
-    #                 (2.0 / (9 * t_phi)) ** 0.5
-    #                 * np.array([[1, 0, 0], [0, -1, 0], [0, 0, 0]]),
-    #                 (2.0 / (9 * t_phi)) ** 0.5
-    #                 * np.array([[0, 0, 0], [0, 1, 0], [0, 0, -1]]),
-    #             ]
-    #     else:
-    #         ops_t2 = []
-    #
-    #     op_t1 = t1**-0.5 * np.array([
-    #         [0, 1, 0],
-    #         [0, 0, np.sqrt(2)],
-    #         [0, 0, 0]
-    #     ])
-    #
-    #     anharmonicity = self.p("anharmonicity", qubit)
-    #     if not np.allclose(anharmonicity, 0.0):
-    #         ham = np.array(
-    #             [
-    #                 [0.0, 0.0, 0.0],
-    #                 [0.0, 0.0, 0.0],
-    #                 [0.0, 0.0, anharmonicity],
-    #             ]
-    #         )
-    #     else:
-    #         ham = None
-    #
-    #     (dim,) = self.basis_lookup[qubit]
-    #     if dim.dim_hilbert == 2:  # Slice matrix dimensions to work with qubit-state
-    #         op_t1 = op_t1[:2, :2]
-    #         ops_t2 = [op[:2, :2] for op in ops_t2]
-    #         ham = None
-    #
-    #     return Operation.from_lindblad_form(
-    #         duration,
-    #         self.basis_lookup[qubit],
-    #         hamiltonian=ham,
-    #         lindblad_ops=[op_t1, *ops_t2],
-    #     ).at(qubit)
+    def _idle(self, qubit, duration, t1, t2):
+        if np.isfinite(t1) and np.isfinite(t2):
+            t_phi = 1.0 / (1.0 / t2 - 0.5 / t1)
+            if t_phi < 0:
+                raise ValueError("t2 must be less than 2*t1")
+            elif np.allclose(t_phi, 0):
+                ops_t2 = []
+            else:
+                ops_t2 = [
+                    (8.0 / (9 * t_phi)) ** 0.5
+                    * np.array([[1, 0, 0], [0, 0, 0], [0, 0, -1]]),
+                    (2.0 / (9 * t_phi)) ** 0.5
+                    * np.array([[1, 0, 0], [0, -1, 0], [0, 0, 0]]),
+                    (2.0 / (9 * t_phi)) ** 0.5
+                    * np.array([[0, 0, 0], [0, 1, 0], [0, 0, -1]]),
+                ]
+        else:
+            ops_t2 = []
 
-    def _idle(self, qubit: str, duration: float, t1: float, t2: float):
-        """
-        Models idle time decoherence.
+        op_t1 = t1**-0.5 * np.array([
+            [0, 1, 0],
+            [0, 0, np.sqrt(2)],
+            [0, 0, 0]
+        ])
 
-        The standard T1 relaxation is replaced by a symmetric bit-flip
-        channel (|0> <-> |1>) with a total probability p=0.1, while
-        T2 dephasing is preserved.
-        """
-        return (
-            self.ops_lookup[qubit]
-            .rotate_x(rad(0))
-            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
-            .at(qubit)
-        )
+        anharmonicity = self.p("anharmonicity", qubit)
+        if not np.allclose(anharmonicity, 0.0):
+            ham = np.array(
+                [
+                    [0.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0],
+                    [0.0, 0.0, anharmonicity],
+                ]
+            )
+        else:
+            ham = None
+
+        (dim,) = self.basis_lookup[qubit]
+        if dim.dim_hilbert == 2:  # Slice matrix dimensions to work with qubit-state
+            op_t1 = op_t1[:2, :2]
+            ops_t2 = [op[:2, :2] for op in ops_t2]
+            ham = None
+
+        return Operation.from_lindblad_form(
+            duration,
+            self.basis_lookup[qubit],
+            hamiltonian=ham,
+            lindblad_ops=[op_t1, *ops_t2],
+        ).at(qubit)
+
+    # def _idle(self, qubit: str, duration: float, t1: float, t2: float):
+    #     """
+    #     Models idle time decoherence.
+    #
+    #     The standard T1 relaxation is replaced by a symmetric bit-flip
+    #     channel (|0> <-> |1>) with a total probability p=0.1, while
+    #     T2 dephasing is preserved.
+    #     """
+    #     return (
+    #         self.ops_lookup[qubit]
+    #         .rotate_x(rad(0))
+    #         .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+    #         .at(qubit)
+    #     )
 
     def get_ordered_qubits_to_basis(self, qubits: List[str]) -> Iterable:
         return [self.basis_lookup[qubit_name][0] for qubit_name in qubits]

@@ -27,6 +27,7 @@ setup:
     frequency: 6802
     T1: 8147  # 3264
     T1_meas: 8147  # 3264
+    T1_T2_ratio: 1.38888888889  # T2/T1
     T2: 25000
     T2_int: 25000
     anharmonicity: -299
@@ -42,6 +43,7 @@ setup:
     frequency: 6087
     T1: 3068  # 1139
     T1_meas: 3068  # 1139
+    T1_T2_ratio: 1.1935483871  # T2/T1
     T2: 24700
     T2_int: 24700
     anharmonicity: -302
@@ -57,6 +59,7 @@ setup:
     frequency: 6802
     T1: 8147  # 3264
     T1_meas: 8147  # 3264
+    T1_T2_ratio: 0.99507389162  # T2/T1
     T2: 25000
     T2_int: 25000
     anharmonicity: -299
@@ -72,6 +75,7 @@ setup:
     frequency: 6087
     T1: 3068  # 1139
     T1_meas: 3068  # 1139
+    T1_T2_ratio: 0.63265306122  # T2/T1
     T2: 24700
     T2_int: 24700
     anharmonicity: -302
@@ -87,6 +91,7 @@ setup:
     frequency: 4843
     T1: 8147  # 3264
     T1_meas: 8147  # 3264
+    T1_T2_ratio: 0.11578947368  # T2/T1
     T2: 25000
     T2_int: 25000
     anharmonicity: -314
@@ -102,6 +107,7 @@ setup:
     frequency: 5891
     T1: 3068  # 1139
     T1_meas: 3068  # 1139
+    T1_T2_ratio: 0.57102272727  # T2/T1
     T2: 25000
     T2_int: 25000
     anharmonicity: -302
@@ -117,6 +123,7 @@ setup:
     frequency: 4788
     T1: 8147  # 3264
     T1_meas: 8147  # 3264
+    T1_T2_ratio: 0.47159090909  # T2/T1
     T2: 25000
     T2_int: 25000
     anharmonicity: -317
@@ -132,6 +139,7 @@ setup:
     frequency: 5891
     T1: 3068  # 1139
     T1_meas: 3068  # 1139
+    T1_T2_ratio: 1.38461538462  # T2/T1
     T2: 25000
     T2_int: 25000
     anharmonicity: -302
@@ -147,6 +155,7 @@ setup:
     frequency: 4788
     T1: 8147  # 3264
     T1_meas: 8147  # 3264
+    T1_T2_ratio: 1.38888888889  # T2/T1
     T2: 25000
     T2_int: 25000
     anharmonicity: -317
