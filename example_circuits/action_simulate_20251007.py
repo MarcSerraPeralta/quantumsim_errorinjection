@@ -14,13 +14,13 @@ from qce_interp.interface_definitions.intrf_error_identifier import ErrorDetecti
 if __name__ == '__main__':
     import numpy as np
 
-    # noise_file = "setup_noisy_perfect_case.yaml"
-    noise_file = "setup_noisy_experimental_match.yaml"
+    noise_file = "setup_noisy_t1t2_readout_2qg_leakage.yaml"
+    # noise_file = "setup_noisy_experimental_match.yaml"
     # noise_file = "setup_noisy_perfect_to_experiment_case.yaml"
     current_dir = os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR = Path(os.path.join(current_dir, ".."))
     setup = Setup.from_file(os.path.join(ROOT_DIR, noise_file))
-    state_dim: int = 2
+    state_dim: int = 3
     dim_lookup = {
         "D7": 2,
         "Z3": state_dim,

@@ -16,9 +16,9 @@ from qce_interp.interface_definitions.intrf_error_identifier import ErrorDetecti
 
 if __name__ == '__main__':
 
-    noise_file = "setup_noisy_experimental_match.yaml"
+    # noise_file = "setup_noisy_experimental_match.yaml"
     # noise_file = "setup_noisy_test.yaml"
-    # noise_file = "setup_noisy_perfect_case.yaml"
+    noise_file = "setup_noisy_perfect_case.yaml"
     # noise_file = "setup_noisy_perfect_to_experiment_case.yaml"
     current_dir = os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR = Path(os.path.join(current_dir, ".."))
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 100_000
+    repetitions = 20_000
 
     # error_probabilities = np.linspace(0.0, 0.1, 5)
     # error_probabilities = np.linspace(0.0, 0.1, 2)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     )
     list_of_datasets: List[xr.Dataset] = []
     for i, error_probability in enumerate(error_probabilities):
-        involved_qubits, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates(
+        involved_qubits, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates_amplitude_damping(
             error_probability=float(error_probability),
             error_coherence=True,
         )
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     list_of_datasets: List[xr.Dataset] = []
     for i, error_probability in enumerate(error_probabilities):
-        involved_qubits, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates(
+        involved_qubits, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates_amplitude_damping(
             error_probability=float(error_probability),
             error_coherence=False,
         )
