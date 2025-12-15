@@ -28,7 +28,7 @@ if __name__ == '__main__':
         "Z1": state_dim,
         "D1": 2,
         "X1": state_dim,
-        "D2": 2,
+        "D2": state_dim,
         "X2": state_dim,
         "D3": 2,
     }
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 10_000
+    repetitions = 5_000
 
     # meas_ctrl = MeasurementControl(
     #     noise_model=model,

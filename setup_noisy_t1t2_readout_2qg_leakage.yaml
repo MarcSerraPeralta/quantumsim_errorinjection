@@ -57,11 +57,11 @@ setup:
       [0.010, 0.060, 0.929]]
   - qubit: D1
     frequency: 4843
-    T1: 28500
-    T1_meas: 28500
+    T1: 10600
+    T1_meas: 10600
     T1_T2_ratio: 0.11578947368  # T2/T1
-    T2: 25000
-    T2_int: 25000
+    T2: 20000
+    T2_int: 20000
     anharmonicity: -314
     meas_prob01: 0.001
     meas_prob10: 0.032
@@ -73,8 +73,8 @@ setup:
       [0.003, 0.131, 0.860]]
   - qubit: X1
     frequency: 5891
-    T1: 15200
-    T1_meas: 15200
+    T1: 35200
+    T1_meas: 35200
     T1_T2_ratio: 0.57102272727  # T2/T1
     T2: 25000
     T2_int: 25000
@@ -136,7 +136,7 @@ setup:
     quasistatic_flux: 0
     cphase_leakage_rate: 0.0165 # L1 (m 3.3%)
     cphase_leakage_phase: 1.5707963267948966
-    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_rate: 0.4
     cphase_leakage_mobility_phase: 0
     cphase_flux_sensitivity: 0
     cphase_phase_22: 0
@@ -150,7 +150,7 @@ setup:
     quasistatic_flux: 0
     cphase_leakage_rate: 0.019 # L1 (m 3.8%)
     cphase_leakage_phase: 1.5707963267948966
-    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_rate: 0.4
     cphase_leakage_mobility_phase: 0
     cphase_flux_sensitivity: 0
     cphase_phase_22: 0

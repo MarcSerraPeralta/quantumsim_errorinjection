@@ -32,7 +32,7 @@ if __name__ == '__main__':
         "Z1": state_dim,
         "D1": 2,
         "X1": state_dim,
-        "D2": 2,
+        "D2": state_dim,
         "X2": state_dim,
         "D3": 2,
     }
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     # error_probabilities = np.linspace(0.0, 0.1, 5)
     # error_probabilities = np.linspace(0.0, 0.1, 2)
-    error_probabilities = np.asarray([0.0, 0.1])
+    error_probabilities = np.asarray([0.1])
     # error_probabilities = np.asarray([0.0] + [0.06] * 3 + [0.08] * 5 + [0.1] * 5)
 
     meas_ctrl = MeasurementControl(
