@@ -41,8 +41,8 @@ setup:
       [0.005, 0.184, 0.811]]
   - qubit: Z1
     frequency: 6087
-    T1: 24500
-    T1_meas: 24500
+    T1: 30500
+    T1_meas: 30500
     T1_T2_ratio: 0.63265306122  # T2/T1
     T2: 24700
     T2_int: 24700
@@ -136,7 +136,7 @@ setup:
     quasistatic_flux: 0
     cphase_leakage_rate: 0.0165 # L1 (m 3.3%)
     cphase_leakage_phase: 1.5707963267948966
-    cphase_leakage_mobility_rate: 0.4
+    cphase_leakage_mobility_rate: 0.3
     cphase_leakage_mobility_phase: 0
     cphase_flux_sensitivity: 0
     cphase_phase_22: 0
@@ -150,7 +150,7 @@ setup:
     quasistatic_flux: 0
     cphase_leakage_rate: 0.019 # L1 (m 3.8%)
     cphase_leakage_phase: 1.5707963267948966
-    cphase_leakage_mobility_rate: 0.4
+    cphase_leakage_mobility_rate: 0.3
     cphase_leakage_mobility_phase: 0
     cphase_flux_sensitivity: 0
     cphase_phase_22: 0
