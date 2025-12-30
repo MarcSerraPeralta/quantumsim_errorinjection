@@ -1,0 +1,301 @@
+version: '1'
+name: Real quantum device Surface-17
+
+setup:
+  - time_1qubit: 20
+    time_2qubit: 60
+    time_measure: 300
+    cphase_time_int: 48
+    cphase_time_rise: 6
+    cphase_time_phase_corr: 0
+    # CPhase error parameters
+#    quasistatic_flux: 0
+#    cphase_leakage_rate: 0.005
+#    cphase_leakage_phase: 1.5707963267948966
+#    cphase_leakage_mobility_rate: 0
+#    cphase_leakage_mobility_phase: 0
+#    cphase_flux_sensitivity: 0
+#    cphase_phase_22: 0
+#    cphase_phase_diff_02_12: 3.141592653589793
+#    cphase_phase_diff_20_21: 0
+#    cphase_phase_corr_error: 0
+
+    # assign_matrix[i, j] = prob(noisy outcome j | ideal outcome or initial state i)
+
+    # Qubit parameters
+  - qubit: D7
+    frequency: 4788
+    T1: 14825
+    T1_meas: 14825
+    T1_T2_ratio: 1.38888888889  # T2/T1
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -311
+    meas_prob01: 0
+    meas_prob10: 0
+    meas_prob12: 0
+    meas_prob21: 0
+    assign_matrix: [
+      [0.999, 0.001, 0.000],
+      [0.032, 0.924, 0.044],
+      [0.004, 0.074, 0.918]]
+  - qubit: Z3
+    frequency: 6032
+    T1: 34805  # 1139
+    T1_meas: 34805  # 1139
+    T1_T2_ratio: 1.1935483871  # T2/T1
+    T2: 18500
+    T2_int: 18500
+    anharmonicity: -291
+    meas_prob01: 0.005
+    meas_prob10: 0.072
+    meas_prob12: 0.001
+    meas_prob21: 0.260
+    assign_matrix: [
+      [0.993, 0.006, 0.001],
+      [0.031, 0.967, 0.002],
+      [0.026, 0.158, 0.817]]
+  - qubit: D4
+    frequency: 6802
+    T1: 14825
+    T1_meas: 14825
+    T1_T2_ratio: 0.99507389162  # T2/T1
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -299
+    meas_prob01: 0.001
+    meas_prob10: 0.055
+    meas_prob12: 0.002
+    meas_prob21: 0.072
+    assign_matrix: [
+      [0.999, 0.001, 0.000],
+      [0.018, 0.798, 0.184],
+      [0.005, 0.184, 0.811]]
+  - qubit: Z1
+    frequency: 6087
+    T1: 34805  # 1139
+    T1_meas: 34805  # 1139
+    T1_T2_ratio: 0.63265306122  # T2/T1
+    T2: 24700
+    T2_int: 24700
+    anharmonicity: -302
+    meas_prob01: 0.001
+    meas_prob10: 0.039
+    meas_prob12: 0.001
+    meas_prob21: 0.112
+    assign_matrix: [
+      [0.991, 0.002, 0.008],
+      [0.011, 0.987, 0.002],
+      [0.010, 0.060, 0.929]]
+  - qubit: D1
+    frequency: 4843
+    T1: 14825
+    T1_meas: 14825
+    T1_T2_ratio: 0.11578947368  # T2/T1
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -314
+    meas_prob01: 0.001
+    meas_prob10: 0.032
+    meas_prob12: 0.036
+    meas_prob21: 0.067
+    assign_matrix: [
+      [0.998, 0.001, 0.000],
+      [0.011, 0.851, 0.140],
+      [0.003, 0.131, 0.860]]
+  - qubit: X1
+    frequency: 5891
+    T1: 34805  # 1139
+    T1_meas: 34805  # 1139
+    T1_T2_ratio: 0.57102272727  # T2/T1
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -302
+    meas_prob01: 0.0
+    meas_prob10: 0.025
+    meas_prob12: 0.001
+    meas_prob21: 0.055
+    assign_matrix: [
+      [0.999, 0.001, 0.000],
+      [0.013, 0.987, 0.010],
+      [0.002, 0.028, 0.970]]
+  - qubit: D2
+    frequency: 4788
+    T1: 14825
+    T1_meas: 14825
+    T1_T2_ratio: 0.47159090909  # T2/T1
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -317
+    meas_prob01: 0.002
+    meas_prob10: 0.061
+    meas_prob12: 0.014
+    meas_prob21: 0.128
+    assign_matrix: [
+      [0.997, 0.002, 0.001],
+      [0.026, 0.965, 0.009],
+      [0.039, 0.135, 0.827]]
+  - qubit: X2
+    frequency: 6107
+    T1: 34805  # 1139
+    T1_meas: 34805  # 1139
+    T1_T2_ratio: 1.38461538462  # T2/T1
+    T2: 11200
+    T2_int: 11200
+    anharmonicity: -302
+    meas_prob01: 0.001
+    meas_prob10: 0.107
+    meas_prob12: 0.035
+    meas_prob21: 0.109
+    assign_matrix: [
+      [0.991, 0.002, 0.008],
+      [0.031, 0.967, 0.002],
+      [0.010, 0.060, 0.929]]
+  - qubit: D3
+    frequency: 4907
+    T1: 14825
+    T1_meas: 14825
+    T1_T2_ratio: 1.38888888889  # T2/T1
+    T2: 25000
+    T2_int: 25000
+    anharmonicity: -309
+    meas_prob01: 0
+    meas_prob10: 0
+    meas_prob12: 0
+    meas_prob21: 0
+    assign_matrix: [
+      [0.974, 0.000, 0.026],
+      [0.020, 0.974, 0.006],
+      [0.034, 0.100, 0.863]]
+  - qubits: ["D7", "Z3"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .00017  # rad / ns (85 kHz)
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.019 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.02
+    cphase_phase_corr_error_10: 0.04
+    cphase_phase_corr_error_2q: 0.01
+  - qubits: ["Z3", "D4"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .00054  # rad / ns (270 kHz)
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0048 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.04
+    cphase_phase_corr_error_10: 0.02
+    cphase_phase_corr_error_2q: 0.01
+  - qubits: ["Z1", "D4"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0006  # rad / ns (300 kHz)
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.011 # L1 (m 2.2%)
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: -0.00872
+    cphase_phase_corr_error_10: 0.005233
+    cphase_phase_corr_error_2q: 0.003488
+  - qubits: ["D1", "Z1"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .00019  # rad / ns (95 kHz)
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0185 # L1 (m 3.7%)
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: -0.012211
+    cphase_phase_corr_error_10: -0.024422
+    cphase_phase_corr_error_2q: 0.003488
+  - qubits: ["D1", "X1"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .00028  # rad / ns (140 kHz)
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0165 # L1 (m 3.3%)
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: -0.057566
+    cphase_phase_corr_error_10: -0.017444
+    cphase_phase_corr_error_2q: -0.001744
+  - qubits: ["D2", "X1"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0002  # rad / ns (100 kHz)
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.019 # L1 (m 3.8%)
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.024422
+    cphase_phase_corr_error_10: 0.0120366
+    cphase_phase_corr_error_2q: 0.087222
+#  - qubits: ["D2", "Z1"] # qubit static, qubit fluxed
+#    zz_coupling_wfreq: .00059  # rad / ns (95 kHz)
+  - qubits: ["D2", "X2"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0001  # rad / ns (50 kHz)
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0025 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.02
+    cphase_phase_corr_error_10: 0.04
+    cphase_phase_corr_error_2q: 0.01
+  - qubits: ["D3", "X2"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0002  # rad / ns (100 kHz)
+    quasistatic_flux: 0
+    cphase_leakage_rate: 0.0065 # L1
+    cphase_leakage_phase: 1.5707963267948966
+    cphase_leakage_mobility_rate: 0
+    cphase_leakage_mobility_phase: 0
+    cphase_flux_sensitivity: 0
+    cphase_phase_22: 0
+    cphase_phase_diff_02_12: 3.141592653589793
+    cphase_phase_diff_20_21: 0
+    cphase_phase_corr_error_01: 0.02
+    cphase_phase_corr_error_10: 0.04
+    cphase_phase_corr_error_2q: 0.01
+  - qubits: ["Z3", "D7"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: ["D4", "Z3"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: ["D2", "Z1"] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: [ "Z1", "D1" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: [ "Z1", "D2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: [ "X1", "D1" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: [ "X1", "D2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: [ "X2", "D2" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
+  - qubits: [ "X2", "D3" ] # qubit static, qubit fluxed
+    zz_coupling_wfreq: .0  # rad / ns
