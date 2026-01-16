@@ -45,8 +45,8 @@ if __name__ == '__main__':
     qec_rounds: int = 10
     repetitions = 100_000
 
-    # error_probabilities = np.linspace(0.0, 0.1, 5)
-    error_probabilities = np.linspace(0.0, 0.1, 2)
+    error_probabilities = np.linspace(0.0, 0.1, 5)
+    # error_probabilities = np.linspace(0.0, 0.1, 2)
     # error_probabilities = np.asarray([0.0])
 
     meas_ctrl = MeasurementControl(

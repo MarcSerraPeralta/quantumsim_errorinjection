@@ -82,7 +82,7 @@ if __name__ == '__main__':
     combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
     # Assign the coordinate values to the new dimension
     combined_stepwise.coords["error_probability"] = error_probabilities
-    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_coherent_t1t2_readout_2qg.nc", overwrite=True)
+    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_coherent_t1t2_readout_zz.nc", overwrite=True)
 
     list_of_datasets: List[xr.Dataset] = []
     for i, error_probability in enumerate(error_probabilities):
@@ -110,4 +110,4 @@ if __name__ == '__main__':
     combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
     # Assign the coordinate values to the new dimension
     combined_stepwise.coords["error_probability"] = error_probabilities
-    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_stochastic_t1t2_readout_2qg.nc", overwrite=True)
+    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_stochastic_t1t2_readout_zz.nc", overwrite=True)
