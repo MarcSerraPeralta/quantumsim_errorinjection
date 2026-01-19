@@ -69,6 +69,8 @@ from quantumsim.utilities.process_initial_circuit import (
 
 IQubitList = List[str]
 IGateList = List[Any]
+QEC_DURATION_D3: float = 600
+QEC_DURATION_D5: float = 880
 
 
 @unique
@@ -324,7 +326,7 @@ class MeasurementControl:
 
         return meas_outcome_indices
 
-    def construct_error_identifier(self, cycle_circuit_gates: IGateList, depth: int = 10, repetitions: int = 10, **error_identifier_construction_kwargs) -> ErrorDetectionIdentifier:
+    def construct_error_identifier(self, cycle_circuit_gates: IGateList, depth: int = 10, repetitions: int = 10, **error_identifier_construction_kwargs) -> Tuple[ErrorDetectionIdentifier, xr.DataArray]:
         # Construct initial state
         meas_outcome_indices: np.ndarray = self.execute_simulation_loop(
             cycle_circuit_gates=cycle_circuit_gates,
@@ -350,7 +352,23 @@ class MeasurementControl:
             involved_qubits_qubit_ids=[QubitIDObj(qubit_name) for qubit_name in self._code_settings.qubits],
             **error_identifier_construction_kwargs,
         )
-        return error_identifier
+        # Construct raw DataArray
+        n_reps, n_cycles, n_qubits = result_tensor.shape
+        simulated_result_dataset = xr.DataArray(
+            data=result_tensor,
+            dims=['repetition', 'qec_cycles_array', 'qubit_index'],
+            coords={
+                'repetition': np.arange(n_reps),
+                'qec_cycles_array': np.arange(n_cycles),
+                'qubit_index': np.arange(n_qubits)
+            },
+            name="raw_simulation_outcomes",
+            attrs={
+                "qubits_ordered": [q.id for q in error_identifier.involved_qubit_ids],
+                "initial_state": self.initial_state.as_array,
+            }
+        )
+        return error_identifier, simulated_result_dataset
 
     def construct_dataset(self, error_identifier: ErrorDetectionIdentifier, noise_file_path: Path) -> xr.Dataset:
         with open(noise_file_path, 'r') as file:
@@ -367,11 +385,75 @@ class MeasurementControl:
         combined_gates = []
         t_sqg: float = 0
         combined_gates.extend([
-            self._noise_model.random_rotate_x_180_t1like("D4", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("Z1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("D1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("X1", t_start=t_ref),
-            self._noise_model.random_rotate_x_180_t1like("D2", t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D2", t=QEC_DURATION_D3, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
+    def construct_distance_3_bitflip_circuit_gates_depolarizing(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        combined_gates.extend([
+            self._noise_model.depolarizing_channel("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.depolarizing_channel("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.depolarizing_channel("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D2", t=QEC_DURATION_D3, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
+    def construct_distance_3_bitflip_circuit_gates_amplitude_damping(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        combined_gates.extend([
+            self._noise_model.amplitude_damping_01("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D2", t=QEC_DURATION_D3, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
+    def construct_distance_3_bitflip_circuit_gates_phase_damping(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        combined_gates.extend([
+            self._noise_model.amplitude_damping_01("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D2", t=QEC_DURATION_D3, t_start=t_ref),
+        ])
+        combined_gates.extend([
+            self._noise_model.phase_damping_01("D4", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.phase_damping_01("Z1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.phase_damping_01("D1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.phase_damping_01("X1", t=QEC_DURATION_D3, t_start=t_ref),
+            self._noise_model.phase_damping_01("D2", t=QEC_DURATION_D3, t_start=t_ref),
         ])
         t_ref += t_sqg
         qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
@@ -502,11 +584,79 @@ class MeasurementControl:
         )
         return self._code_settings.qubits, gates
 
-    def construct_distance_5_bitflip_circuit_gates(self, error_probability: float = 0.0, error_coherence: bool = True) -> Tuple[IQubitList, IGateList]:
+    def construct_distance_5_bitflip_circuit_gates_fermioniclike(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        combined_gates.extend([
+            self._noise_model.random_rotate_x_180_t1like("D7", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D4", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D2", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("D3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("Z3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("Z1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("X1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.random_rotate_x_180_t1like("X2", t=QEC_DURATION_D5, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_5_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
+    def construct_distance_5_bitflip_circuit_gates_depolarizing(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        combined_gates.extend([
+            self._noise_model.depolarizing_channel("D7", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D4", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D2", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("D3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("Z3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("Z1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("X1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.depolarizing_channel("X2", t=QEC_DURATION_D5, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_5_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
+    def construct_distance_5_bitflip_circuit_gates_amplitude_damping(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        combined_gates.extend([
+            self._noise_model.amplitude_damping_01("D7", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D4", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D2", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("D3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z3", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("Z1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X1", t=QEC_DURATION_D5, t_start=t_ref),
+            self._noise_model.amplitude_damping_01("X2", t=QEC_DURATION_D5, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_5_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
+    def construct_distance_5_bitflip_circuit_gates(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
         gates = []
         t_sqg: float = 20
         t_tqg: float = 60
-        t_ref: float = 0
         if error_coherence:
             theta: float = np.rad2deg(2 * np.arcsin(np.sqrt(error_probability)))
             gates.extend(
@@ -944,6 +1094,7 @@ class MeasurementControl:
             initial_state=initial_state,
             qec_rounds=error_identifier.qec_rounds,
             code_layout=code_layout,
+            include_partitioned_fidelities=True,
         )
         dataset.attrs["noise_config"] = noise_config_string
 

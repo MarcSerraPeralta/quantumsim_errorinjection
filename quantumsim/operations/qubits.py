@@ -96,7 +96,7 @@ def depolarizing_channel(px=0, py=0, pz=0):
         An operation, that corresponds to the depolarizing channel.
     """
     pi = 1 - px - py - pz
-    ki = np.sqrt(1 - pi) * np.eye(2)
+    ki = np.sqrt(pi) * np.eye(2)
 
     sigma_x = np.array([[0, 1], [1, 0]])
     kx = np.sqrt(px) * sigma_x
@@ -127,6 +127,28 @@ def amplitude_damping_01(t, t1=np.inf):
     p = 1 - np.exp(-t/t1)
     k0 = np.array([[1, 0], [0, np.sqrt(1-p)]])
     k1 = np.array([[0, np.sqrt(p)], [0, 0]])
+    return Operation.from_kraus((k0, k1), bases1_default)
+
+
+def phase_damping_01(t, t2=np.inf):
+    """A phase damping channel from |1> to |0>.
+
+    Parameters
+    ----------
+    t: float
+        Duration of this channel.
+    t2: float, optional
+        T2 time.
+
+    Returns
+    -------
+    Operation
+        An operation, that corresponds to the amplitude damping channel.
+    """
+    p = 1 - np.exp(-t/t2)
+
+    k0 = np.array([[1, 0], [0, np.sqrt(1-p)]])
+    k1 = np.array([[0, 0], [0, np.sqrt(p)]])
     return Operation.from_kraus((k0, k1), bases1_default)
 
 
