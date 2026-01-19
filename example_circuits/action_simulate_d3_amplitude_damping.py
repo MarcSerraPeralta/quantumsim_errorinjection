@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 100_000
+    repetitions = 5_000
 
     error_probabilities = np.linspace(0.0, 0.1, 5)
     # error_probabilities = np.linspace(0.0, 0.1, 2)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
     # Assign the coordinate values to the new dimension
     combined_stepwise.coords["error_probability"] = error_probabilities
-    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_coherent_amplitude_damping.nc", overwrite=True)
+    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_coherent_amplitude_damping_{np.random.randint(999_999_999)}.nc", overwrite=True)
 
     list_of_datasets: List[xr.Dataset] = []
     for i, error_probability in enumerate(error_probabilities):
