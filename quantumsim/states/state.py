@@ -19,12 +19,15 @@ class State:
     """
 
     def __init__(
-        self, qubits, *, dim_lookup: Dict[str, int], pauli_vector_class=None, pauli_vector=None, force=False
+        self, qubits, *, dim_lookup: Dict[str, int]=None, pauli_vector_class=None, pauli_vector=None, force=False
     ):
         self.qubits = list(qubits)
         if pauli_vector is not None:
             self.pauli_vector = pauli_vector
         else:
+            if dim_lookup is None:
+                raise ValueError("Specify 'dim_lookup'.")
+
             bases_ = tuple([
                 bases.general(dim_lookup.get(qubit_name, 2)).subbasis([0])
                 for qubit_name in self.qubits

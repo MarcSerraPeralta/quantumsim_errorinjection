@@ -124,7 +124,8 @@ class DiCarloLabModel(Model):
         q0_t2 = self.p("T2", qubit_static)
         q1_t1 = self.p("T1", qubit_fluxed)
         q1_t2 = self.p("T2", qubit_fluxed)
-        q1_t2_int = self.p("T2_int", qubit_fluxed)
+        #q1_t2_int = self.p("T2_int", qubit_fluxed)
+        q1_t2_int = q1_t2
         t2_rise = (q1_t2 + q1_t2_int) / 2
         idle_half = (
             self._idle(qubit_static, 0.5 * time_int, q0_t1, q0_t2),
@@ -159,7 +160,7 @@ class DiCarloLabModel(Model):
         )
         return idle_half + cphase_ + idle_half + phase_corr
 
-    def rotate(self, qubit, t_start=None):
+    def rotate(self, qubit, phi: float = 0.0, theta: float = 0.0, t_start=None):
         """Generic microwave rotation. Parameters: `phi`, `theta` (degrees).
         :math:`\\phi` is an angle, that specifies a rotation axis
         (:math:`\\phi=0` is X rotation and :math:`\\phi=90` is Y rotation).
@@ -170,12 +171,10 @@ class DiCarloLabModel(Model):
         half_duration = 0.5 * self.p("time_1qubit", qubit)
         return (
             self._idle(qubit, half_duration, t1, t2),
-            ParametrizedOperation(
-                lambda phi, theta: self.ops_lookup[qubit].rotate_euler(
-                    rad(phi), rad(theta), -rad(phi)
-                ),
-                self.basis_lookup[qubit],
-            ),
+            self.ops_lookup[qubit]
+            .rotate_euler( rad(phi), rad(theta), -rad(phi))
+            .set_bases(self.basis_lookup[qubit])
+            .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
         )
 
@@ -205,6 +204,19 @@ class DiCarloLabModel(Model):
             self._idle(qubit, half_duration, t1, t2),
             self.ops_lookup[qubit]
             .rotate_x(rad(90))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
+            self._idle(qubit, half_duration, t1, t2),
+        )
+
+    def rotate_x_m90(self, qubit, t_start=0):
+        t1 = self.p("T1", qubit)
+        t2 = self.p("T2", qubit)
+        half_duration = 0.5 * self.p("time_1qubit", qubit)
+        return (
+            self._idle(qubit, half_duration, t1, t2),
+            self.ops_lookup[qubit]
+            .rotate_x(rad(-90))
             .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
             .at(qubit),
             self._idle(qubit, half_duration, t1, t2),
