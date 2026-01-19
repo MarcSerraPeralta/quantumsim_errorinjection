@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 100_000
+    repetitions = 10_000
 
     # error_probabilities = np.linspace(0.0, 0.1, 5)
     error_probabilities = np.linspace(0.0, 0.1, 2)
