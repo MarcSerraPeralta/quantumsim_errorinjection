@@ -4,7 +4,7 @@ import numpy as np
 from typing import List
 from pathlib import Path
 from quantumsim import Setup
-from quantumsim.models .model_dclab import (
+from quantumsim.models.model_dclab import (
     DiCarloLabModel,
     DiCarloLabModelNoIdle,
 )
@@ -109,4 +109,4 @@ if __name__ == '__main__':
     combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_probability")
     # Assign the coordinate values to the new dimension
     combined_stepwise.coords["error_probability"] = error_probabilities
-    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_stochastic_amplitude_damping.nc", overwrite=True)
+    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_d3_stochastic_amplitude_damping_{np.random.randint(999_999_999)}.nc", overwrite=True)
