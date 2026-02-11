@@ -1,6 +1,9 @@
 version: '1'
 name: Real quantum device Surface-17
 
+# THIS SETUP NEEDS TO USE THAT THE QEC DURATION (FOR THE T1 CHANNEL) IS 600
+# THIS SETUP USES PDATA = 4.3% AND PANC = 4.2%
+
 setup:
   - time_1qubit: 20
     time_2qubit: 60
@@ -24,13 +27,8 @@ setup:
 
     # Qubit parameters
   - qubit: D4
-    frequency: 6802
-    T1: 7600  # 3264
-    T1_meas: 7600  # 3264
-    T1_T2_ratio: 0.99507389162  # T2/T1
-    T2: 25000
-    T2_int: 25000
-    anharmonicity: -299
+    T1: 10041.84
+    T2: -1
     meas_prob01: 0
     meas_prob10: 0
     meas_prob12: 0
@@ -40,13 +38,8 @@ setup:
       [0.0, 1.0, 0.0],
       [0.0, 0.0, 1.0]]
   - qubit: Z1
-    frequency: 6087
-    T1: 3300  # 1139
-    T1_meas: 3300  # 1139
-    T1_T2_ratio: 0.63265306122  # T2/T1
-    T2: 24700
-    T2_int: 24700
-    anharmonicity: -302
+    T1: 8267.80
+    T2: -1
     meas_prob01: 0
     meas_prob10: 0
     meas_prob12: 0
@@ -56,13 +49,8 @@ setup:
       [0.0, 1.0, 0.0],
       [0.0, 0.0, 1.0]]
   - qubit: D1
-    frequency: 4843
-    T1: 7600  # 3264
-    T1_meas: 7600  # 3264
-    T1_T2_ratio: 0.11578947368  # T2/T1
-    T2: 25000
-    T2_int: 25000
-    anharmonicity: -314
+    T1: 10041.84
+    T2: -1
     meas_prob01: 0
     meas_prob10: 0
     meas_prob12: 0
@@ -72,13 +60,8 @@ setup:
       [0.0, 1.0, 0.0],
       [0.0, 0.0, 1.0]]
   - qubit: X1
-    frequency: 5891
-    T1: 3300  # 1139
-    T1_meas: 3300  # 1139
-    T1_T2_ratio: 0.57102272727  # T2/T1
-    T2: 25000
-    T2_int: 25000
-    anharmonicity: -302
+    T1: 8267.80
+    T2: -1
     meas_prob01: 0
     meas_prob10: 0
     meas_prob12: 0
@@ -88,13 +71,8 @@ setup:
       [0.0, 1.0, 0.0],
       [0.0, 0.0, 1.0]]
   - qubit: D2
-    frequency: 4788
-    T1: 7600  # 3264
-    T1_meas: 7600  # 3264
-    T1_T2_ratio: 0.47159090909  # T2/T1
-    T2: 25000
-    T2_int: 25000
-    anharmonicity: -317
+    T1: 10041.84
+    T2: -1
     meas_prob01: 0
     meas_prob10: 0
     meas_prob12: 0
