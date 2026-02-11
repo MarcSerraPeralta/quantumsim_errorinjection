@@ -25,8 +25,8 @@ setup:
     # Qubit parameters
   - qubit: D4
     frequency: 6802
-    T1: 18825
-    T1_meas: 18825
+    T1: 14825
+    T1_meas: 14825
     T1_T2_ratio: 0.99507389162  # T2/T1
     T2: 25000
     T2_int: 25000
@@ -41,8 +41,8 @@ setup:
       [0.005, 0.184, 0.811]]
   - qubit: Z1
     frequency: 6087
-    T1: 44805
-    T1_meas: 44805
+    T1: 55688
+    T1_meas: 55688
     T1_T2_ratio: 0.63265306122  # T2/T1
     T2: 24700
     T2_int: 24700
@@ -57,8 +57,8 @@ setup:
       [0.010, 0.060, 0.929]]
   - qubit: D1
     frequency: 4843
-    T1: 18825
-    T1_meas: 18825
+    T1: 14825
+    T1_meas: 14825
     T1_T2_ratio: 0.11578947368  # T2/T1
     T2: 25000
     T2_int: 25000
@@ -73,8 +73,8 @@ setup:
       [0.003, 0.131, 0.860]]
   - qubit: X1
     frequency: 5891
-    T1: 44805
-    T1_meas: 44805
+    T1: 55688
+    T1_meas: 55688
     T1_T2_ratio: 0.57102272727  # T2/T1
     T2: 25000
     T2_int: 25000
@@ -89,8 +89,8 @@ setup:
       [0.002, 0.028, 0.970]]
   - qubit: D2
     frequency: 4788
-    T1: 18825
-    T1_meas: 18825
+    T1: 14825
+    T1_meas: 14825
     T1_T2_ratio: 0.47159090909  # T2/T1
     T2: 25000
     T2_int: 25000
@@ -106,7 +106,7 @@ setup:
   - qubits: ["Z1", "D4"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .0006  # rad / ns (300 kHz)
     quasistatic_flux: 0
-    cphase_leakage_rate: 0.005 # L1 (m 2.2%)
+    cphase_leakage_rate: 0.011 # L1 (m 2.2%)
     cphase_leakage_phase: 1.5707963267948966
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
@@ -120,7 +120,7 @@ setup:
   - qubits: ["D1", "Z1"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .00019  # rad / ns (95 kHz)
     quasistatic_flux: 0
-    cphase_leakage_rate: 0.009 # L1 (m 3.7%)
+    cphase_leakage_rate: 0.0185 # L1 (m 3.7%)
     cphase_leakage_phase: 1.5707963267948966
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
@@ -134,7 +134,7 @@ setup:
   - qubits: ["D1", "X1"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .00028  # rad / ns (140 kHz)
     quasistatic_flux: 0
-    cphase_leakage_rate: 0.008 # L1 (m 3.3%)
+    cphase_leakage_rate: 0.0165 # L1 (m 3.3%)
     cphase_leakage_phase: 1.5707963267948966
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
@@ -148,7 +148,7 @@ setup:
   - qubits: ["D2", "X1"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .0002  # rad / ns (100 kHz)
     quasistatic_flux: 0
-    cphase_leakage_rate: 0.007 # L1 (m 3.8%)
+    cphase_leakage_rate: 0.019 # L1 (m 3.8%)
     cphase_leakage_phase: 1.5707963267948966
     cphase_leakage_mobility_rate: 0
     cphase_leakage_mobility_phase: 0
@@ -158,7 +158,7 @@ setup:
     cphase_phase_diff_20_21: 0
     cphase_phase_corr_error_01: 0.024422
     cphase_phase_corr_error_10: 0.0120366
-    cphase_phase_corr_error_2q: 0.0087222
+    cphase_phase_corr_error_2q: 0.087222
   - qubits: ["D2", "Z1"] # qubit static, qubit fluxed
     zz_coupling_wfreq: .0  # rad / ns
   - qubits: [ "Z1", "D1" ] # qubit static, qubit fluxed

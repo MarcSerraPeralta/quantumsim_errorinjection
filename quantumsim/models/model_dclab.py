@@ -182,6 +182,15 @@ class DiCarloLabModel(Model):
             self._idle(qubit, half_duration, t1, t2),
         )
 
+    def rotate_z(self, qubit, phi: float = 0.0, t_start=None, *args, **kwargs):
+        """Microwave rotation around X axis. Parameters: `phi` (degrees)."""
+        return (
+            self.ops_lookup[qubit]
+            .rotate_z(rad(phi))
+            .set_bases(self.basis_lookup[qubit], self.basis_lookup[qubit])
+            .at(qubit),
+        )
+
     def rotate_x(self, qubit, theta: float = 0.0, t_start=None, *args, **kwargs):
         """Microwave rotation around X axis. Parameters: `theta` (degrees)."""
         t1 = self.p("T1", qubit)

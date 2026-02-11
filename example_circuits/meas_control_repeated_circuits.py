@@ -381,6 +381,26 @@ class MeasurementControl:
             )
         return dataset
 
+    def construct_distance_3_bitflip_circuit_gates_global_phase_error(self, phi_rate: float = 0.0, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        rotation_degree_per_qec_cycle: float = np.rad2deg(phi_rate * QEC_DURATION_D3 * 2 * np.pi)  # rotation rate [Hz] * QEC_DURATION [s] * 2pi * rad2deg
+        combined_gates.extend([
+            self._noise_model.rotate_z("D4", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+            # self._noise_model.rotate_z("Z1", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+            self._noise_model.rotate_z("D1", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+            # self._noise_model.rotate_z("X1", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+            self._noise_model.rotate_z("D2", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_3_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
+
     def construct_distance_3_bitflip_circuit_gates_fermioniclike(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
         combined_gates = []
         t_sqg: float = 0
