@@ -384,7 +384,8 @@ class MeasurementControl:
     def construct_distance_3_bitflip_circuit_gates_global_phase_error(self, phi_rate: float = 0.0, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
         combined_gates = []
         t_sqg: float = 0
-        rotation_degree_per_qec_cycle: float = np.rad2deg(phi_rate * QEC_DURATION_D3 * 2 * np.pi)  # rotation rate [Hz] * QEC_DURATION [s] * 2pi * rad2deg
+        ns_to_s: float = 1e-9
+        rotation_degree_per_qec_cycle: float = np.rad2deg(phi_rate * QEC_DURATION_D3 * ns_to_s * 2 * np.pi)  # rotation rate [Hz] * QEC_DURATION [s] * 2pi * rad2deg
         combined_gates.extend([
             self._noise_model.rotate_z("D4", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
             # self._noise_model.rotate_z("Z1", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
