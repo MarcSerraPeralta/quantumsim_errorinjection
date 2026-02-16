@@ -223,27 +223,27 @@ class MeasurementControl:
         ]
         # All zero (Even) initial state
         if initial_state_type in [InitialStateType.ALL_ZERO, InitialStateType.EVEN]:
-            return InitialStateContainer.from_ordered_list(
-                initial_states=[
-                    InitialStateEnum.ZERO
+            return InitialStateContainer(
+                initial_states={
+                    QubitIDObj(qubit_id): InitialStateEnum.ZERO
                     for i, qubit_id in enumerate(data_qubit_names)
-                ]
+                }
             )
         # All ones initial state
         if initial_state_type == InitialStateType.ALL_ONES:
-            return InitialStateContainer.from_ordered_list(
-                initial_states=[
-                    InitialStateEnum.ONE
+            return InitialStateContainer(
+                initial_states={
+                    QubitIDObj(qubit_id): InitialStateEnum.ONE
                     for i, qubit_id in enumerate(data_qubit_names)
-                ]
+                }
             )
         # Odd initial state
         if initial_state_type == InitialStateType.ODD:
-            return InitialStateContainer.from_ordered_list(
-                initial_states=[
-                    InitialStateEnum.ONE if (i % 2 == 1) else InitialStateEnum.ZERO
+            return InitialStateContainer(
+                initial_states={
+                    QubitIDObj(qubit_id): InitialStateEnum.ONE if (i % 2 == 1) else InitialStateEnum.ZERO
                     for i, qubit_id in enumerate(data_qubit_names)
-                ]
+                }
             )
         raise NotImplementedError(f"Initial state type ({initial_state_type.name}) not yet supported.")
 
@@ -604,6 +604,27 @@ class MeasurementControl:
             ]
         )
         return self._code_settings.qubits, gates
+
+    def construct_distance_5_bitflip_circuit_gates_global_phase_error(self, phi_rate: float = 0.0, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
+        combined_gates = []
+        t_sqg: float = 0
+        ns_to_s: float = 1e-9
+        rotation_degree_per_qec_cycle: float = np.rad2deg(phi_rate * QEC_DURATION_D5 * ns_to_s * 2 * np.pi)  # rotation rate [Hz] * QEC_DURATION [s] * 2pi * rad2deg
+        combined_gates.extend([
+            self._noise_model.rotate_z("D7", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+            self._noise_model.rotate_z("D4", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+            self._noise_model.rotate_z("D1", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+            self._noise_model.rotate_z("D2", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+            self._noise_model.rotate_z("D3", phi=rotation_degree_per_qec_cycle, t_start=t_ref),
+        ])
+        t_ref += t_sqg
+        qubits, gates = self.construct_distance_5_bitflip_circuit_gates(
+            error_probability=error_probability,
+            error_coherence=error_coherence,
+            t_ref=t_ref,
+        )
+        combined_gates.extend(gates)
+        return qubits, combined_gates
 
     def construct_distance_5_bitflip_circuit_gates_fermioniclike(self, error_probability: float = 0.0, error_coherence: bool = True, t_ref: float = 0) -> Tuple[IQubitList, IGateList]:
         combined_gates = []
@@ -1115,7 +1136,7 @@ class MeasurementControl:
             initial_state=initial_state,
             qec_rounds=error_identifier.qec_rounds,
             code_layout=code_layout,
-            #include_partitioned_fidelities=True,
+            include_partitioned_fidelities=True,
         )
         dataset.attrs["noise_config"] = noise_config_string
 
