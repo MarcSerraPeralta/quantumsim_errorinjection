@@ -1115,7 +1115,7 @@ class MeasurementControl:
             initial_state=initial_state,
             qec_rounds=error_identifier.qec_rounds,
             code_layout=code_layout,
-            #include_partitioned_fidelities=True,
+            include_partitioned_fidelities=True,
         )
         dataset.attrs["noise_config"] = noise_config_string
 
