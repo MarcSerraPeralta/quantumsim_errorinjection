@@ -41,23 +41,31 @@ if __name__ == '__main__':
         dim_lookup=dim_lookup,
     )
 
+    angle_drifts = np.linspace(0, 1e-3, 11) #GHz because time is given in ns
     common_path: Path = ROOT_DIR / "simulated_datasets"
     qec_rounds: int = 10
-    repetitions = 100_000
+    repetitions = 50_000
 
-    z_phase_error_rates = np.linspace(0.0, 200e3, 10)  #np.asarray([0.0, 50e3, 100e3, 500e3])
+    #z_phase_error_rates = np.linspace(0.0, 200e3, 10)  #np.asarray([0.0, 50e3, 100e3, 500e3])
 
-    meas_ctrl = MeasurementControl(
-        noise_model=model,
-        code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3),
-        dim_lookup=dim_lookup,
-        initial_state_type=InitialStateType.ODD,
-    )
     list_of_datasets: List[xr.Dataset] = []
-    for i, z_phase_error_rate in enumerate(z_phase_error_rates):
+    for i, angle_drift in enumerate(angle_drifts):
+        model = DiCarloLabModelT2Ratio(
+            setup=setup,
+            dim_lookup=dim_lookup,
+            angle_drift=angle_drift,
+        )
+
+        meas_ctrl = MeasurementControl(
+            noise_model=model,
+            code_settings=CodeSettings.from_code_type(RepetitionCodeType.DISTANCE_3),
+            dim_lookup=dim_lookup,
+            initial_state_type=InitialStateType.ODD,
+        )
+
         error_probability: float = 0.1
         involved_qubits, gates = meas_ctrl.construct_distance_3_bitflip_circuit_gates_global_phase_error(
-            phi_rate=z_phase_error_rate,
+            phi_rate=0,
             error_probability=0.1,  # Hardcoded to 10% error probability
             error_coherence=False,
         )
@@ -73,7 +81,7 @@ if __name__ == '__main__':
         )
         dataset["simulated_dataset"] = raw_dataset
         dataset.attrs.update(raw_dataset.attrs)
-        dataset.attrs["error_z_rate_per_cycle"] = z_phase_error_rate
+        dataset.attrs["error_z_rate_per_cycle"] = angle_drift
         dataset.attrs["error_probability"] = error_probability
         dataset.attrs["error_coherence"] = int(False)
         list_of_datasets.append(dataset)
@@ -81,5 +89,11 @@ if __name__ == '__main__':
     # Concatenate along a new, unnamed dimension
     combined_stepwise: xr.Dataset = xr.concat(list_of_datasets, dim="error_z_rate_per_cycle")
     # Assign the coordinate values to the new dimension
-    combined_stepwise.coords["error_z_rate_per_cycle"] = z_phase_error_rates
-    meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_zerror_d3_stochastic_t1t2_readout.nc", overwrite=True)
+    combined_stepwise.coords["error_z_rate_per_cycle"] = angle_drifts
+    #meas_ctrl.save_dataset_to_netcdf(combined_stepwise, common_path / f"defect_rate_zerror_d3_stochastic_t1t2_readout.nc", overwrite=True)
+    meas_ctrl.save_dataset_to_netcdf(
+            combined_stepwise,
+            common_path / f"defect_rate_zerror_d3_stochastic_t1t2_readout_{np.random.randint(999_999_999)}.nc",
+            overwrite=True,
+            engine="h5netcdf",
+    )

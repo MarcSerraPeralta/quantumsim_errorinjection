@@ -589,6 +589,13 @@ class DiCarloLabModelNoIdle(DiCarloLabModel):
 
 class DiCarloLabModelT2Ratio(DiCarloLabModel):
 
+    def __init__(
+        self, setup, dim_lookup: Dict[str, int], *, measurement_full_projection=False, angle_drift = 0.
+    ):
+        super().__init__(setup=setup, dim_lookup=dim_lookup, measurement_full_projection=measurement_full_projection)
+        self.angle_drift = angle_drift
+        return
+
     def _idle(self, qubit, duration, t1, t2):
         factor_t1_to_t2 = self.p("T1_T2_ratio", qubit)
         t2 = t1 * factor_t1_to_t2
@@ -618,22 +625,19 @@ class DiCarloLabModelT2Ratio(DiCarloLabModel):
         ])
 
         anharmonicity = self.p("anharmonicity", qubit)
-        if not np.allclose(anharmonicity, 0.0):
-            ham = np.array(
-                [
-                    [0.0, 0.0, 0.0],
-                    [0.0, 0.0, 0.0],
-                    [0.0, 0.0, anharmonicity],
-                ]
-            )
-        else:
-            ham = None
+        ham = np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [0.0, self.angle_drift, 0.0],
+                [0.0, 0.0, anharmonicity],
+            ]
+        )
 
         (dim,) = self.basis_lookup[qubit]
         if dim.dim_hilbert == 2:  # Slice matrix dimensions to work with qubit-state
             op_t1 = op_t1[:2, :2]
             ops_t2 = [op[:2, :2] for op in ops_t2]
-            ham = None
+            ham = None if ham is None else ham[:2, :2]
 
         return Operation.from_lindblad_form(
             duration,
