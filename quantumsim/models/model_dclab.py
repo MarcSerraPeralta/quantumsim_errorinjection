@@ -540,13 +540,13 @@ class DiCarloLabModel(Model):
             [0, 0, 0]
         ])
 
-        anharmonicity = self.p("anharmonicity", qubit)
+        anharmonicity = self.p("anharmonicity", qubit) * 1e-3 # MHz to GHz
         if not np.allclose(anharmonicity, 0.0):
             ham = np.array(
                 [
                     [0.0, 0.0, 0.0],
                     [0.0, 0.0, 0.0],
-                    [0.0, 0.0, anharmonicity],
+                    [0.0, 0.0, 2 * np.pi * anharmonicity],
                 ]
             )
         else:
@@ -624,12 +624,12 @@ class DiCarloLabModelT2Ratio(DiCarloLabModel):
             [0, 0, 0]
         ])
 
-        anharmonicity = self.p("anharmonicity", qubit)
+        anharmonicity = self.p("anharmonicity", qubit) * 1e-3 # from MHz to GHz
         ham = np.array(
             [
                 [0.0, 0.0, 0.0],
-                [0.0, self.angle_drift, 0.0],
-                [0.0, 0.0, anharmonicity],
+                [0.0, 2 * np.pi * self.angle_drift, 0.0],
+                [0.0, 0.0, 2 * np.pi * anharmonicity],
             ]
         )
 
